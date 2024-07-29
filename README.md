@@ -1,0 +1,3 @@
+# nfy_server
+
+## License
