@@ -1,4 +1,4 @@
-
+# coding=utf8
 from typing import List, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, validator
@@ -17,6 +17,12 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
 
+    # 数据库配置内容
+    DB_USERNAME: str
+    DB_PASSWORD: str
+    DB_HOST: str
+    DB_NAME: str
+    DB_SCHEMA: str
     
 
     class Config:
