@@ -1,8 +1,8 @@
 # coding=utf8
 from typing import List, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, validator
-
+from pydantic import AnyHttpUrl, validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -23,7 +23,6 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_NAME: str
     DB_SCHEMA: str
-    
 
     class Config:
         case_sensitive = True
