@@ -101,6 +101,20 @@ async def upgrade(db: BaseDBAsyncClient) -> str:
     "tmpl_update_usr" VARCHAR(32) NOT NULL,
     "tmpl_update_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     "tmpl_ext_data" JSONB NOT NULL
+);
+        CREATE TABLE IF NOT EXISTS "nfy_token_detail" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "token_id" VARCHAR(32) NOT NULL UNIQUE,
+    "usr_id" VARCHAR(32) NOT NULL,
+    "usr_token" VARCHAR(128) NOT NULL,
+    "token_expire" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+        CREATE TABLE IF NOT EXISTS "nfy_token_main" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "usr_id" VARCHAR(32) NOT NULL,
+    "usr_aid" VARCHAR(128) NOT NULL UNIQUE,
+    "usr_secret" VARCHAR(128) NOT NULL UNIQUE,
+    "secret_update_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP
 );"""
 
 
@@ -114,4 +128,6 @@ async def downgrade(db: BaseDBAsyncClient) -> str:
         DROP TABLE IF EXISTS "nfy_rcv_ntfy";
         DROP TABLE IF EXISTS "nfy_chnl_main";
         DROP TABLE IF EXISTS "nfy_rec_main";
-        DROP TABLE IF EXISTS "nfy_tmpl_main";"""
+        DROP TABLE IF EXISTS "nfy_tmpl_main";
+        DROP TABLE IF EXISTS "nfy_token_detail";
+        DROP TABLE IF EXISTS "nfy_token_main";"""

@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 
-import app.database.base as db_base
+import app.core.db as db_base
 from tortoise.contrib.fastapi import register_tortoise
+
+from app.api.routers import *
 
 
 def get_application():
@@ -18,6 +20,8 @@ def get_application():
         allow_headers=["*"],
     )
 
+    _app.include_router(common_rt)
+
     return _app
 
 
@@ -25,7 +29,7 @@ app = get_application()
 
 register_tortoise(
     app,
-    db_url = db_base.db_url,
+    config = db_base.tortoise_cfg,
     modules = db_base.modules,
     generate_schemas=True,
     add_exception_handlers=True

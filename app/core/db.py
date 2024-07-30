@@ -12,9 +12,10 @@ env_path = os.path.join(target_dir, '.env')
 load_dotenv(env_path)
 
 modules = {'models':[
-    'models.common',
-    'models.receiver',
-    'models.notify'
+    'app.models.common',
+    'app.models.receiver',
+    'app.models.notify',
+    'app.models.token'
 ]}
 
 tortoise_cfg = {
