@@ -21,7 +21,7 @@ class UserMain(Model):
     usr_stu = fields.IntField(default=1)
     usr_auth_type = fields.IntField(null=False)
     usr_create_dt = fields.DatetimeField(null=True,auto_now_add=True)
-    usr_ext_data = fields.JSONField()
+    usr_ext_data = fields.JSONField(null=True)
 
     class Meta:
         table = 'nfy_usr_main'

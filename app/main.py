@@ -20,7 +20,7 @@ def get_application():
         allow_headers=["*"],
     )
 
-    _app.include_router(common_rt)
+    _app.include_router(user_rt)
 
     return _app
 
