@@ -6,8 +6,8 @@ def build_query_exp(filters:Dict[str,Any],logics:Dict[str,Any]=None) -> Any:
 
     '''
     入参定义：
-    fitlers: 通过request模型形成的字典,key:value类型，其中key指代数据库字段，value指代目标筛选值
-    logics: 定义好的针对filters中可能出现的逻辑方法,key:logic，其中key与filters中保持一致,logic代表tortoise的逻辑运算法后缀
+    fitlers: 通过request模型形成的字典,key:value类型,其中key指代数据库字段,value指代目标筛选值
+    logics: 定义好的针对filters中可能出现的逻辑方法,key:logic,其中key与filters中保持一致,logic代表tortoise的逻辑运算法后缀
     通过组装filters+logics来形成query表达式
     '''
     rslt_query = Q()
@@ -19,7 +19,7 @@ def build_query_exp(filters:Dict[str,Any],logics:Dict[str,Any]=None) -> Any:
         else:
             fltr_list.append({'key': key, 'value': value, 'logic': logics[key]})
 
-
+    # 遍历表达式子项进行拼接
     for each_filter in fltr_list:
         
         if each_filter.get('key') is None or each_filter.get('value') is None:

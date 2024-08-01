@@ -16,6 +16,9 @@ class UserInfoQuery(BaseModel):
     usr_auth_type: int | None = Field(default=None,alias='auth')
     usr_create_dt__gte: str | None = Field(default=None,alias='start')
     usr_create_dt__lte: str | None = Field(default=None,alias='end')
+    page_no: int | None = Field(default=1,alias='page')
+    page_size: int | None = Field(default=10,alias='size')
+    order_by: str | None = Field(default=None,alias='order')
 
     class Config:
         extra = 'forbid'
@@ -39,3 +42,7 @@ class UserInfoRst(BaseModel):
 class UserInfoRes(ResBasic):
 
     data: List[UserInfoRst] | None = Field(default=None)
+    page: int = Field(default=1)
+    size: int = Field(default=10)
+    total: int | None = Field(default=None)
+    has_next: bool = Field(default=False)

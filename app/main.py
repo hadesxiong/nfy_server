@@ -6,6 +6,8 @@ from app.core.config import settings
 import app.core.db as db_base
 from tortoise.contrib.fastapi import register_tortoise
 
+from fastapi_pagination import add_pagination
+
 from app.api.routers import *
 
 
@@ -20,12 +22,12 @@ def get_application():
         allow_headers=["*"],
     )
 
-    _app.include_router(user_rt)
-
     return _app
 
 
 app = get_application()
+
+app.include_router(user_rt)
 
 register_tortoise(
     app,
@@ -34,3 +36,5 @@ register_tortoise(
     generate_schemas=True,
     add_exception_handlers=True
 )
+
+add_pagination(app)
