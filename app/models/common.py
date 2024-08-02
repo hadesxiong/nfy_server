@@ -5,6 +5,7 @@ from tortoise.models import Model
 class UserAuth(Model):
 
     usr_id = fields.CharField(max_length=32,unique=True)
+    usr_name = fields.CharField(max_length=64)
     usr_pwd = fields.CharField(max_length=255)
     auth_update_dt = fields.DatetimeField(null=True,auto_now_add=True)
     auth_ext_data = fields.JSONField()

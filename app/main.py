@@ -10,6 +10,8 @@ from fastapi_pagination import add_pagination
 
 from app.api.routers import *
 
+from app.api.controller.ctrl_error import add_exception_handlers
+
 
 def get_application():
     _app = FastAPI(title=settings.PROJECT_NAME)
@@ -38,3 +40,4 @@ register_tortoise(
 )
 
 add_pagination(app)
+add_exception_handlers(app)

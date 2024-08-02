@@ -4,8 +4,8 @@ from typing import List, Union
 from pydantic import AnyHttpUrl, validator
 from pydantic_settings import BaseSettings
 
-
 class Settings(BaseSettings):
+
     PROJECT_NAME: str
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 
@@ -25,9 +25,14 @@ class Settings(BaseSettings):
     DB_NAME: str
     DB_SCHEMA: str
 
+    # 密钥配置内容
+    SECRET_KEY: str
+    ALGORITHM: str
+    KEY: str
+    IV: str
+
     class Config:
         case_sensitive = True
         env_file = ".env"
-
 
 settings = Settings()

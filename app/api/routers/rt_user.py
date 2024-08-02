@@ -16,13 +16,15 @@ user_rt = APIRouter(
         response_model_exclude_unset=True)
 
 async def getUser(params:UserInfoQuery=Depends()):
-
+        
     # 清理查询参数
-    fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
-    
-    rst = await get_userinfo_handler(fltr_pars)
+        fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
+        
+        rst = await get_userinfo_handler(fltr_pars)
 
-    return UserInfoRes(
-        data = rst.items,
-        has_next = rst.page < rst.pages
-    )
+        print(rst)
+
+        return UserInfoRes(
+            data = rst.items,
+            has_next = rst.page < rst.pages
+        )

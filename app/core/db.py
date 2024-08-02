@@ -1,15 +1,9 @@
 # coding=utf8
-import os
-from dotenv import load_dotenv
 
 from tortoise import Tortoise
 
 # 引入配置文件
-current_dir = os.path.dirname(os.path.abspath(__file__))
-target_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
-env_path = os.path.join(target_dir, '.env')
-
-load_dotenv(env_path)
+from app.core.config import settings
 
 modules = {'models':[
     'app.models.common',
@@ -23,12 +17,12 @@ tortoise_cfg = {
         "default": {
             "engine": "tortoise.backends.asyncpg",
             "credentials":{
-                "host": os.getenv('DB_HOST'),
-                "port": os.getenv('DB_PORT'),
-                "user": os.getenv('DB_USERNAME'),
-                "password": os.getenv('DB_PASSWORD'),
-                "database": os.getenv('DB_NAME'),
-                "schema": os.getenv('DB_SCHEMA')
+                "host": settings.DB_HOST,
+                "port": settings.DB_PORT,
+                "user": settings.DB_USERNAME,
+                "password": settings.DB_PASSWORD,
+                "database": settings.DB_NAME,
+                "schema": settings.DB_SCHEMA
             }
         }
     },
