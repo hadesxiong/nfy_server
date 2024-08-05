@@ -6,8 +6,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 class CustomHTTPException(Exception):
 
-    def __init__(self,status_code:int,detail:str):
+    def __init__(self,status_code:int,detail:str,err_code:int = None):
         self.status_code = status_code
+        self.err_code = err_code
         self.detail = detail
 
 # 自定义异常类
@@ -17,7 +18,7 @@ async def custom_http_exception_handler(
     
     return JSONResponse(
         status_code = exc.status_code,
-        content = {"msg": exc.detail}
+        content = {"msg": exc.detail,"err_code":exc.err_code}
     )
 
 # Pydantic数据验证异常

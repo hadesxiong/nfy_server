@@ -16,20 +16,21 @@ async def upgrade(db: BaseDBAsyncClient) -> str:
         CREATE TABLE IF NOT EXISTS "nfy_pwd_auth" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "usr_id" VARCHAR(32) NOT NULL UNIQUE,
+    "usr_name" VARCHAR(64) NOT NULL UNIQUE,
     "usr_pwd" VARCHAR(255) NOT NULL,
     "auth_update_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
-    "auth_ext_data" JSONB NOT NULL
+    "auth_ext_data" JSONB
 );
         CREATE TABLE IF NOT EXISTS "nfy_usr_main" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "usr_id" VARCHAR(32) NOT NULL UNIQUE,
-    "usr_name" VARCHAR(64) NOT NULL,
+    "usr_name" VARCHAR(64) NOT NULL UNIQUE,
     "usr_avatar" TEXT,
     "usr_role" INT NOT NULL  DEFAULT 1,
     "usr_stu" INT NOT NULL  DEFAULT 1,
     "usr_auth_type" INT NOT NULL,
     "usr_create_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
-    "usr_ext_data" JSONB NOT NULL
+    "usr_ext_data" JSONB
 );
         CREATE TABLE IF NOT EXISTS "nfy_rcv_bark" (
     "id" SERIAL NOT NULL PRIMARY KEY,

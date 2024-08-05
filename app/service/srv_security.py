@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi import Depends,HTTPException, status
 
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import InvalidTokenError,ExpiredSignatureError
 
 from typing import Annotated
 
@@ -109,8 +109,8 @@ def create_actoken(
 
 # 获取当前用户
 async def get_current_user(
-        token: Annotated[str,Depends(oauth2_scheme)],
-        usr_model: Model):
+        # token: Annotated[str,Depends(oauth2_scheme)],
+        token: str):
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -121,22 +121,26 @@ async def get_current_user(
     try:
         payload = jwt.decode(
             token,
-            settings.SECRET_KEY,
-            algorithm = [settings.ALGORITHM]
+            settings.SECRET_KEY,  # 确保这里使用的是正确的密钥
+            algorithms=[settings.ALGORITHM]  # 确保这里使用的是正确的算法列表
         )
-        username: str = payload.get('sub')
-        if username is None:
+        username: str = payload.get('username')
+        if not username:
             raise credentials_exception
-        # 待调整
-        token_data = []
-    
+        return username
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
     except InvalidTokenError:
         raise credentials_exception
     
-    user = get_user(usr_model,user_name=token_data.username)
-    if user is None:
-        raise credentials_exception
-    return user
+    # user = get_user(usr_model,user_name=token_data.username)
+    # if user is None:
+    #     raise credentials_exception
+    # return user
 
 # 获取当前激活用户
 async def get_current_active_user(

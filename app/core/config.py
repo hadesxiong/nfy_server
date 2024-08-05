@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     # 密钥配置内容
     SECRET_KEY: str
     ALGORITHM: str
-    KEY: str
-    IV: str
+    KEY: bytes
+    IV: bytes
 
     class Config:
         case_sensitive = True
