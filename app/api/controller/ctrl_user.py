@@ -2,7 +2,8 @@
 from app.models.common import UserMain, UserAuth
 
 from app.utils.query import build_query_exp
-from app.service.srv_security import get_user,get_pwd_hash, create_actoken, get_current_user
+# from app.service.srv_security import get_user,get_pwd_hash, create_actoken, get_current_user
+from app.service.srv_security import *
 from app.api.controller.ctrl_error import CustomHTTPException
 
 from fastapi_pagination import Params
@@ -49,6 +50,8 @@ async def get_userinfo_handler(filters):
         Params(page=filters['page_no'],size=filters['page_size'])
     )
 
+    print(user_rslt)
+
     return user_rslt
 
 # 用户注册
@@ -63,9 +66,10 @@ async def register_user_handler(
     4. 默认的用户stu始终为1 - 正常；
     5. 默认的用户auth_type为1 - 密码登陆;
     6. usr_pwd被定义在UserAuth中进行存储
+    7. 创建成功后, 同步生成token返回前端
     '''
 
-    if not get_user(UserMain, usr_name):
+    if not await get_user(UserMain, usr_name):
 
         user_id = f'usr_{str(ObjectId())}'
         user_update_dt = datetime.now(timezone(timedelta(hours=8)))
@@ -85,27 +89,23 @@ async def register_user_handler(
 
         try:
 
-            # userMain_ins = await UserMain.create(**userMain_data)
-            # userAuth_ins = await UserAuth.create(**userAuth_data)
+            userMain_ins = await UserMain.create(**userMain_data)
+            userAuth_ins = await UserAuth.create(**userAuth_data)
 
             token_data = create_actoken({'username':usr_name})
-
-            print(token_data)
-
-            # result_token = await get_current_user(token_data)
-            # print(get_current_user(token_data))
-            # print(result_token)
-
-            # return {'user_id': user_id}
             return token_data
         
         except Exception as e:
 
-            raise CustomHTTPException(
-                status_code=400, 
-                detail='用户已存在', 
-                err_code= 11002)
+            raise CustomHTTPException(status_code=400, detail='用户已存在', err_code= 11002)
 
     else:
+        raise CustomHTTPException(status_code=400, detail='用户已存在', err_code=11003)
+    
 
-        return {'1':1}
+# 用户登陆
+async def login_user_handler(usrname:str, usrpwd:str):
+
+    result = await auth_usr(UserAuth,username=usrname,password=usrpwd)
+
+    return result

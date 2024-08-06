@@ -16,6 +16,7 @@ from jwt.exceptions import InvalidTokenError,ExpiredSignatureError
 from typing import Annotated
 
 from tortoise.models import Model
+from tortoise.expressions import Q
 
 from app.core.config import settings
 from app.models.common import UserAuth
@@ -62,28 +63,34 @@ def verify_pwd(plain_pwd:str,hashed_pwd:str):
     return pwd_context.verify(plain_pwd,hashed_pwd)
 
 # 查询用户
-def get_user(usr_model:Model,username:str):
+async def get_user(usr_model:Model,username:str):
     
-    try:
-        usr_ins = usr_model.filter(usr_name=username)
-        if len(usr_ins) > 1:
-            return False
-        else:
-            return usr_ins
-    
-    except:
+    usr_ins = await usr_model.filter(Q(usr_name=username))
+
+    if len(usr_ins) != 1:
         return False
+    else:
+        return usr_ins[0]
     
 # 校验用户
-def auth_usr(usr_model:Model,username:str,password:str):
+async def auth_usr(usr_model:Model,username:str,password:str):
 
-    user = get_user(usr_model,username)
+    user = await get_user(usr_model,username)
 
     if not user:
-        return False
+        raise CustomHTTPException(
+            status_code= status.HTTP_401_UNAUTHORIZED,
+            detail = '用户账户名或者密码错误',
+            err_code = 11004
+        )
     
     if not verify_pwd(password,user.usr_pwd):
-        return False
+        
+        raise CustomHTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = '用户账户名或者密码错误',
+            err_code = 11005
+        )
     
     return user
 
@@ -105,42 +112,46 @@ def create_actoken(
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM
     )
+    
     return encode_jwt
 
 # 获取当前用户
 async def get_current_user(
-        # token: Annotated[str,Depends(oauth2_scheme)],
-        token: str):
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+        token: Annotated[str,Depends(oauth2_scheme)]):
 
     try:
+        
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,  # 确保这里使用的是正确的密钥
             algorithms=[settings.ALGORITHM]  # 确保这里使用的是正确的算法列表
         )
         username: str = payload.get('username')
+        
         if not username:
-            raise credentials_exception
+            raise CustomHTTPException(
+                status_code = status.HTTP_401_UNAUTHORIZED,
+                detail = '用户验证失败',
+                err_code = 11006
+            )
+        
         return username
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-    except InvalidTokenError:
-        raise credentials_exception
     
-    # user = get_user(usr_model,user_name=token_data.username)
-    # if user is None:
-    #     raise credentials_exception
-    # return user
+    except ExpiredSignatureError:
+        
+        raise CustomHTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = 'token已过期',
+            err_code = 11007
+        )
+    
+    except InvalidTokenError:
+        
+        raise CustomHTTPException(
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = '用户验证失败',
+            err_code = 11007
+        )
 
 # 获取当前激活用户
 async def get_current_active_user(
@@ -148,4 +159,5 @@ async def get_current_active_user(
     
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
+    
     return current_user

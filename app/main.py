@@ -30,6 +30,7 @@ def get_application():
 app = get_application()
 
 app.include_router(user_rt)
+app.include_router(notify_rt)
 
 register_tortoise(
     app,

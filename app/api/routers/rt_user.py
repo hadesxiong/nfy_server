@@ -1,17 +1,13 @@
 # coding=utf8
 from fastapi import APIRouter,Depends, Form
-from fastapi.encoders import jsonable_encoder
 
-from typing import Dict,Any
+from app.api.schema.sch_user import UserInfoRes,UserAuthRes,UserInfoQuery
+from app.api.controller.ctrl_user import *
 
-from app.api.schema.sch_user import UserInfoRes,UserInfoQuery
-from app.api.controller.ctrl_user import get_userinfo_handler
-from app.api.controller.ctrl_user import register_user_handler
-
-from app.service.srv_security import decrypt_aes,get_pwd_hash,verify_pwd,get_current_user
+from app.service.srv_security import decrypt_aes,get_current_user
 from app.core.config import settings
 
-# 定义查询路由
+# 定义路由
 user_rt = APIRouter(
     prefix='/user',
     tags=['User','Basic Service'],
@@ -23,39 +19,64 @@ user_rt = APIRouter(
         response_model=UserInfoRes,
         response_model_exclude_unset=True)
 
-async def getUser(params: UserInfoQuery = Depends()):
+async def getUser(
+        params: UserInfoQuery = Depends(),
+        current_user: str = Depends(get_current_user)):
         
     # 清理查询参数
         fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
         
         rst = await get_userinfo_handler(fltr_pars)
 
-        print(rst)
-
         return UserInfoRes(
+            code = 200,
+            msg = 'success',
             data = rst.items,
             has_next = rst.page < rst.pages
         )
 
 # 用户注册
 @user_rt.post(
-        '/userRegister',)
+        '/userRegister',
+        response_model=UserAuthRes,
+        response_model_exclude_unset=True)
 
 async def registerUser(
         username: str = Form(...),
         userpwd: str = Form(...),
         avatar: str | None = Form(None)):
-        
-        usr_name = username
-        usr_pwd = userpwd
-        usr_avatar = avatar
+
+        '''
+        待补充email/手机号等
+        '''
+        usr_name,usr_pwd,usr_avatar = username, userpwd, avatar
 
         pwd_decrypt = decrypt_aes(usr_pwd,settings.KEY,settings.IV)
+        ac_token = await register_user_handler(usr_name,pwd_decrypt,usr_avatar)
 
-        rst = await register_user_handler(usr_name,pwd_decrypt,usr_avatar)
+        return UserAuthRes(
+            code = 200,
+            msg = 'success',
+            token = ac_token
+        )
 
-        rst_2 = await get_current_user(rst)
+# 用户登陆
+@user_rt.post(
+        '/userLogin',
+        response_model=UserAuthRes,
+        response_model_exclude_unset=True)
 
-        print(rst_2)
+async def loginUser(
+        username: str = Form(...),
+        userpwd: str = Form(...)):
 
-        return (rst)
+        '''
+        待补充email/手机号等
+        '''
+        usr_name, usr_pwd = username, userpwd
+        pwd_decrypt = decrypt_aes(usr_pwd,settings.KEY,settings.IV)
+
+        usr_login = await login_user_handler(usr_name,pwd_decrypt)
+        token_data = create_actoken({'username':usr_login.usr_name})
+        
+        return UserAuthRes(code=200, msg='login success',token=token_data)

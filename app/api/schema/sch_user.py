@@ -46,3 +46,7 @@ class UserInfoRes(ResBasic):
     size: int = Field(default=10)
     total: int | None = Field(default=None)
     has_next: bool = Field(default=False)
+
+class UserAuthRes(ResBasic):
+
+    token: str | None = Field(default=None)
