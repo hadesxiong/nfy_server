@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     KEY: bytes
     IV: bytes
 
+    # RABBIT MQ配置内容
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
+    RABBITMQ_USER: str
+    RABBITMQ_PWD: str
+    RABBITMQ_VHOST: str
+
     class Config:
         case_sensitive = True
         env_file = ".env"

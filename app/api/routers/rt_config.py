@@ -1,18 +1,18 @@
 # coding=utf8
 from fastapi import APIRouter,Depends,Request
 
-from app.api.schema.sch_notfiy import ChannelUpdateQuery
-from app.api.controller.ctrl_notfiy import *
+from app.api.schema.sch_config import ChannelUpdateQuery
+from app.api.controller.ctrl_config import *
 from app.service.srv_security import get_current_user
 
 # 定义路由
-notify_rt = APIRouter(
-    prefix='/notify',
+config_rt = APIRouter(
+    prefix='/config',
     tags=['Notify','Config']
 )
 
 # 更新频道信息
-@notify_rt.post(
+@config_rt.post(
     '/channelUpdate')
 
 async def updateChannelInfo(

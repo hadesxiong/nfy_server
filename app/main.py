@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from contextlib import asynccontextmanager
+
 from app.core.config import settings
 
 import app.core.db as db_base
@@ -12,9 +14,18 @@ from app.api.routers import *
 
 from app.api.controller.ctrl_error import add_exception_handlers
 
+from app.service.srv_msg import start_consumer
+
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+
+    await start_consumer('test_queue')
+    yield
+
 
 def get_application():
-    _app = FastAPI(title=settings.PROJECT_NAME)
+    _app = FastAPI(title=settings.PROJECT_NAME,lifespan=lifespan)
 
     _app.add_middleware(
         CORSMiddleware,
@@ -30,7 +41,8 @@ def get_application():
 app = get_application()
 
 app.include_router(user_rt)
-app.include_router(notify_rt)
+app.include_router(config_rt)
+app.include_router(msg_rt)
 
 register_tortoise(
     app,
