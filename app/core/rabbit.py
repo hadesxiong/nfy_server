@@ -13,11 +13,9 @@ async def create_rb_connection() -> aio_pika.Connection:
 
 
 # 创建频道
-async def create_rb_channel(
-        channel_name: str) -> aio_pika.Channel:
+async def create_rb_channel() -> aio_pika.Channel:
     # 确保 create_rb_connection 被 await 了，返回一个连接实例
     con_target = await create_rb_connection()
     # 使用通道实例作为上下文管理器
     chnl_target = await con_target.channel()
-    chnl_target.channel_name = channel_name
     return chnl_target

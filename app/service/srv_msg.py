@@ -4,11 +4,9 @@ from aio_pika import Message
 from app.core.rabbit import create_rb_channel
 from app.api.controller.ctrl_msg import process_msg
 
-async def start_consumer(
-        # chnl_name:str,
-        queue_name:str) -> None:
+async def start_consumer(queue_name:str) -> None:
 
-    chnl_ins = await create_rb_channel('')
+    chnl_ins = await create_rb_channel()
     
     queue_ins = await chnl_ins.declare_queue(name=queue_name,durable=True)
     async def on_msg(msg:Message) -> None:
