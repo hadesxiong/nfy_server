@@ -20,7 +20,7 @@ from app.service.srv_msg import start_consumer
 @asynccontextmanager
 async def lifespan(app:FastAPI):
 
-    await start_consumer('test_queue')
+    await start_consumer('test')
     yield
 
 

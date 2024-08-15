@@ -29,13 +29,17 @@ async def push_msg_queue(
         rb_chnl_ins = await create_rb_channel()
         
         await rb_chnl_ins.declare_queue(
-            name = chnl_ins.chnl_name,
+            name = 'test',
             durable = True
         )
 
         for msg_data in msg_list:
 
-            pass
+            msg_body = json.dumps(msg_data).encode('utf-8')
+            msg_ins = Message(body=msg_body)
+            await rb_chnl_ins.default_exchange.publish(
+                msg_ins,routing_key = 'test'
+            )
 
 
     except Exception as e:
@@ -46,6 +50,10 @@ async def push_msg_queue(
             detail = '频道模板错误',
             err_code = 13001
         )
+    
+    finally:
+
+        await rb_chnl_ins.close()
 
     return 'success'
     # 使用 create_rb_channel 获取通道实例，并自动管理其生命周期
