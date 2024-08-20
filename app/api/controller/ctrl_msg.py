@@ -20,8 +20,6 @@ async def push_msg_queue(
         chnl_id:str,tmpl_id: str, 
         msg_list: List[dict]) -> str:
 
-    print(chnl_id,tmpl_id,msg_list)
-
     try:
         chnl_ins = await NfyChnl.get(chnl_id=chnl_id)
         tmpl_ins = await NfyTmpl.get(tmpl_id=tmpl_id)
@@ -33,12 +31,16 @@ async def push_msg_queue(
             durable = True
         )
 
+        msg_tmpl = Message(None, headers={
+            
+        })
+
         for msg_data in msg_list:
 
             msg_body = json.dumps(msg_data).encode('utf-8')
             msg_ins = Message(body=msg_body)
             await rb_chnl_ins.default_exchange.publish(
-                msg_ins,routing_key = 'test'
+                msg_ins, routing_key = chnl_ins.chnl_name
             )
 
 
@@ -69,15 +71,3 @@ async def push_msg_queue(
     #     # 确保通道被关闭
     #     await chnl_ins.close()
     # return 'success'
-    
-# 从rabbit消费消息
-async def process_msg(
-    msg: Message) -> None:
-
-    try:
-        msg_data = msg.body.decode('utf-8')
-        print(f'received message: {msg_data}')
-
-    finally:
-        await msg.ack()
-

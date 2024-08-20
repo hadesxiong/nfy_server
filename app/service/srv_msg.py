@@ -1,21 +1,31 @@
 # coding=utf8
 import asyncio
+from typing import List, Callable, Any
 from aio_pika import Message
 from app.core.rabbit import create_rb_channel
-from app.api.controller.ctrl_msg import process_msg
 
-async def start_consumer(queue_name:str) -> None:
+# 定义消费函数
+async def push_notify(msg:Message) -> None:
+
+    try:
+        msg_data = msg.body.decode('utf-8')
+        print(msg_data)
+
+    finally:
+        await msg.ack()
+
+async def start_consumer(
+        chnl_list:List[str,Any],
+        on_msg_callback: Callable[[Message,None]]) -> None:
 
     chnl_ins = await create_rb_channel()
+
+    for each_chnl in chnl_list:
+        queue_ins = await chnl_ins.declare_queue(name=each_chnl,durable=True)
+        await queue_ins.consume(on_msg_callback)
     
-    queue_ins = await chnl_ins.declare_queue(name=queue_name,durable=True)
-    async def on_msg(msg:Message) -> None:
-        print(msg)
-        await process_msg(msg)
-
-    await queue_ins.consume(on_msg)
-
-    print(f" [*] Waiting for messages in {queue_name}. To exit press CTRL+C")
+    # print(f" [*] Waiting for messages in {}. To exit press CTRL+C")
+    print(f"[*] Waiting for messages in. To exit press CTRL+C")
 
     try:
 
