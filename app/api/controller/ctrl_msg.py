@@ -16,9 +16,7 @@ from app.service.srv_ntfy import send_ntfy_nfy
 from app.api.controller.ctrl_error import CustomHTTPException
 
 # 推送消息到rabbit
-async def push_msg_queue(
-        chnl_id:str,tmpl_id: str, 
-        msg_list: List[dict]) -> str:
+async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_list: List[dict]) -> str:
 
     try:
         chnl_ins = await NfyChnl.get(chnl_id=chnl_id)
@@ -26,21 +24,29 @@ async def push_msg_queue(
 
         rb_chnl_ins = await create_rb_channel()
         
-        await rb_chnl_ins.declare_queue(
-            name = 'test',
-            durable = True
-        )
-
-        msg_tmpl = Message(None, headers={
-            
-        })
+        await rb_chnl_ins.declare_queue(name = chnl_ins.chnl_id, durable = True)
+        
+        # 定义表头
+        msg_headers = {
+            'chnl_type': chnl_ins.chnl_type,
+            'chnl_auth_data': chnl_ins.chnl_auth_data,
+            'tmpl_id': tmpl_ins.tmpl_id,
+            'tmpl_args': tmpl_ins.tmpl_args
+        }
+        # 定义其他属性
+        msg_properties = {
+            'app_id': 'nfy_server',
+            'content_type': 'application/json',
+            'delivery_mode':2
+        }
 
         for msg_data in msg_list:
 
             msg_body = json.dumps(msg_data).encode('utf-8')
-            msg_ins = Message(body=msg_body)
+            msg_ins = Message(headers= msg_headers, body=msg_body, **msg_properties)
+            
             await rb_chnl_ins.default_exchange.publish(
-                msg_ins, routing_key = chnl_ins.chnl_name
+                msg_ins, routing_key = chnl_ins.chnl_id
             )
 
 
@@ -71,3 +77,10 @@ async def push_msg_queue(
     #     # 确保通道被关闭
     #     await chnl_ins.close()
     # return 'success'
+
+# 定义获取所有的chnl_id用于消费函数启动监听
+async def get_chnl_list() -> list:
+
+    # 使用annotate和values来获取所有chnl_id
+    chnl_ids = await NfyChnl.all().values_list('chnl_id', flat=True)
+    return chnl_ids

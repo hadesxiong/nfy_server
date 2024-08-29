@@ -14,13 +14,15 @@ from app.api.routers import *
 
 from app.api.controller.ctrl_error import add_exception_handlers
 
-from app.service.srv_msg import start_consumer
+from app.api.controller.ctrl_msg import get_chnl_list
 
+from app.service.srv_msg import start_consumer,push_notify
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
 
-    await start_consumer('test')
+    chnl_list = await get_chnl_list()
+    await start_consumer(chnl_list,push_notify)
     yield
 
 

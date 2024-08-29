@@ -28,4 +28,26 @@ class ChannelUpdateQuery(ChannelUpdateForm):
     class Config:
         extra = 'allow'
 
+class TemplateUpdateForm(BaseModel):
+
+    tmpl_title: str | None = Field(default=None,alias='title')
+    tmpl_stu: int | None = Field(default=None, alias='statu')
+    tmpl_chnl: str | None = Field(default=None, alias='channel')
+    tmpl_args: Dict[str,Any] | None = Field(default=None, alias='args')
+    tmpl_ext_data: Dict[str,Any] | None = Field(default=None, alias='tmpl_ext')
+
+    class Config:
+        extra = 'forbid'
+
+class TemplateUpdateQuery(TemplateUpdateForm):
+    tmpl_id: str | None = Field(default=None, alias='tmpl')
+    form: TemplateUpdateForm | None  = Field(default=None, alias='data')
+
+    class Config:
+        extra = 'allow'
+
 # Response模型
+class UpdateRst(ResBasic):
+
+    target: str | None = Field(default=None)
+    dt: str | None = Field(default=None)
