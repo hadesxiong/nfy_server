@@ -23,7 +23,7 @@ async def pushMsgQueue(
     rst = await push_msg_queue(
         chnl_id = form_data.chnl_id,
         tmpl_id = form_data.tmpl_id,
-        msg_list = form_data.msg_list
+        msg_dict = form_data.msg_dict
     )
 
     

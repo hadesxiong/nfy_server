@@ -66,6 +66,7 @@ def send_bark_nfy(**kwargs):
         auth_pwd = kwargs.get('chnl_auth_pwd',None)
 
         response = requests.request('GET',url,headers=headers,data=payload,timeout=30,auth=(auth_usr,auth_pwd))
+        return response.status_code
 
     except requests.RequestException as e:
         return 'request exception:' + str(e)
