@@ -2,10 +2,11 @@
 import json
 from fastapi import status
 from aio_pika import Message
+from bson import ObjectId
 from app.core.rabbit import create_rb_channel
 
 # 引入模型
-from app.models.notify import NfyChnl,NfyTmpl
+from app.models.notify import NfyChnl,NfyTmpl,NfyRec
 from app.models.receiver import RcvBark,RcvNtfy
 from app.api.schema.sch_msg import MsgData
 
@@ -13,7 +14,7 @@ from app.api.schema.sch_msg import MsgData
 from app.api.controller.ctrl_error import CustomHTTPException
 
 # 推送消息到rabbit
-async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData) -> str:
+async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from: str) -> str:
 
     try:
         chnl_ins = await NfyChnl.get(chnl_id=chnl_id)
@@ -31,7 +32,9 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData) -> str:
             'chnl_host': chnl_ins.chnl_host,
             'tmpl_id': tmpl_ins.tmpl_id,
             'tmpl_title': tmpl_ins.tmpl_title,
-            'tmpl_args': tmpl_ins.tmpl_args
+            'tmpl_args': tmpl_ins.tmpl_args,
+            'call_from': call_from,
+            'batch_id': f'batch_{ObjectId()}'
         }
         # 定义其他属性
         msg_properties = {
@@ -74,9 +77,12 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData) -> str:
             elif msg_headers['chnl_type'] == 2:
                 msg_body = {
                     'receive': {
-
+                        'id': each.rcv_id,
+                        'name': each.rcv_name,
+                        'topic': each.rcv_topic,
+                        'role': each.rcv_role
                     },
-                    'detail': json.dumps(message_data['msg_data'])
+                    'detail': message_data['msg_data']
                 }
 
             msg_body = json.dumps(msg_body).encode('utf-8')
@@ -92,7 +98,11 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData) -> str:
 
         await rb_chnl_ins.close()
 
-    return 'success'
+    return {
+        'rcv_length': len(rcv_list),
+        'chnl_type':msg_headers['chnl_type'],
+        'tmpl_title':tmpl_ins.tmpl_title
+    }
     # 使用 create_rb_channel 获取通道实例，并自动管理其生命周期
     # chnl_ins = await create_rb_channel()
     # try:
@@ -113,3 +123,12 @@ async def get_chnl_list() -> list:
     # 使用annotate和values来获取所有chnl_id
     chnl_ids = await NfyChnl.all().values_list('chnl_id', flat=True)
     return chnl_ids
+
+# 定义方法用来调用存储推送结果
+async def set_rec_data(rec_dict:dict) -> str:
+
+    # 存储rec_dict
+    rec_ins = await NfyRec.create(**rec_dict)
+    await rec_ins.save()
+
+    return rec_ins.rec_id[4:]

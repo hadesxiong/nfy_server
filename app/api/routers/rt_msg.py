@@ -2,19 +2,18 @@
 from fastapi import APIRouter,Depends,Request
 from typing import Dict,Any
 
-from app.api.schema.sch_msg import MsgQueue
+from app.api.schema.sch_msg import MsgQueue,MsgRes
 from app.api.controller.ctrl_msg import *
 from app.service.srv_security import get_current_user
 
 # 定义路由
-msg_rt = APIRouter(
-    prefix='/message',
-    tags=['Notify','Push']
-)
+msg_rt = APIRouter(prefix='/message',tags=['Notify','Push'])
 
 # 推送消息到rabbit服务
 @msg_rt.post(
-    '/sendMessage')
+    '/sendMessage',
+    response_model=MsgRes,
+    response_model_exclude_unset=True)
 
 async def pushMsgQueue(
     form_data:MsgQueue,
@@ -23,17 +22,14 @@ async def pushMsgQueue(
     rst = await push_msg_queue(
         chnl_id = form_data.chnl_id,
         tmpl_id = form_data.tmpl_id,
-        msg_dict = form_data.msg_dict
+        msg_dict = form_data.msg_dict,
+        call_from = form_data.call_from
     )
-
     
-    return {'rst':1}
-
-    # msg_list = [{'count': i} for i in range(1, 11)]
-
-    # rst = await push_msg_queue(chnl_name='test',queue_name='test_queue',msg_list=msg_list)
-
-    # return {'rst':rst}
+    return MsgRes(code=200,msg='success',
+                  receive_total_count=rst['rcv_length'],
+                  template_title=rst['tmpl_title'],
+                  channel_type=rst['chnl_type'])
 
 
 

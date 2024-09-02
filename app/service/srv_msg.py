@@ -1,10 +1,12 @@
 # coding=utf8
-import asyncio,json
+import asyncio,json,base64
 from typing import List, Callable, Any
 from aio_pika import Message
 from bson import ObjectId
 # 引入方法
 from app.service.srv_bark import send_bark_nfy
+from app.service.srv_ntfy import send_ntfy_nfy
+from app.api.controller.ctrl_msg import set_rec_data
 # 引入服务
 from app.core.rabbit import create_rb_channel
 
@@ -30,20 +32,47 @@ async def push_notify(msg:Message) -> None:
 
             send_rslt  = send_bark_nfy(**bark_kwargs)
 
-            print(send_rslt)
+        elif msg.headers['chnl_type'] == 2:
+            
+            auth_user = msg.headers['chnl_auth_data']['auth_user']
+            auth_pwd = msg.headers['chnl_auth_data']['auth_pwd']
+
+            auth_token = f'{auth_user}:{auth_pwd}'
+            encode_token = base64.b64encode(auth_token.encode('utf-8')).decode('utf-8')
+
+            ntfy_kwargs = {
+                'ntfy_auth': f'Basic {encode_token}',
+                'chnl_host': msg.headers['chnl_host'],
+                'title': msg.headers['tmpl_title'],
+                'topic': msg.headers['tmpl_args']['tmpl_topic'],
+                'icon': msg.headers['tmpl_args']['tmpl_icon'],
+                'message': msg.headers['tmpl_args']['tmpl_body'].format(**msg_data['detail']) 
+            }
+
+            send_rslt = send_ntfy_nfy(**ntfy_kwargs)
+
+        else:
+            pass
+        
+        if send_rslt:
+
             rec_data = {
                 'rec_id': f'rec_{ObjectId()}',
                 'tmpl_id': msg.headers['tmpl_id'],
                 'rec_use': msg.app_id,
-                'call_from': msg.app_id,
-                'rec_data': bark_kwargs['body'],
-                'rec_res': send_rslt,
-                'rec_code': send_rslt,
+                'call_from': msg.headers['call_from'],
+                'rec_res': 'success' if send_rslt['code'] == 200 else 'fail',
+                'rec_code': send_rslt['code'],
+                'rec_msg': send_rslt['res'],
                 'rec_rcv': msg_data['receive']['id'],
-                'rec_batch': msg_data['tmpl_id']
+                'rec_data': msg_data['detail'],
+                'rec_batch': msg.headers['batch_id']
             }
 
-            print(rec_data)
+            rec_id = await set_rec_data(rec_data)
+
+        else:
+            pass
 
     finally:
         await msg.ack()

@@ -24,12 +24,12 @@ def send_ntfy_nfy(**kwargs):
             headers = {"Authorization": kwargs.get('ntfy_auth',None)}
             json_data = json.dumps(cleaned_data)
             response = requests.request('POST',url,headers=headers,data=json_data)
-            return response
+            return {"res": "success","code": response.status_code}
         
         except requests.RequestException as e:
-            return 'request exception:' + str(e)
+            return {'res': 'request exception:' + str(e), 'code': 40001}
         except Exception as e:
-            return 'fail to request:' + str(e)
+            return {'res': 'fail to request:' + str(e), 'code':40002}
         
     else:
-        return 'error topic or message'
+        return {'res': 'err topic or message', 'code': 40003}
