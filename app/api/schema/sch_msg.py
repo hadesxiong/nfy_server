@@ -12,6 +12,7 @@ class MsgData(BaseModel):
 
     msg_type: int = Field(default=1,alias='type')
     msg_rcv: str = Field(default='all', alias='receive')
+    msg_target: str | None = Field(default=None,alias='target')
     msg_data: Dict[str,Any] = Field(alias='data')
 
     @field_validator('msg_data')

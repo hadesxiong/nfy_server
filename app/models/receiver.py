@@ -42,11 +42,11 @@ class RcvNtfy(Model):
 
 class RcvGroup(Model):
 
-    group_id = fields.CharField(max_length=32,unique=True)
+    group_id = fields.CharField(max_length=32)
     group_name = fields.CharField(max_length=128)
     group_type = fields.IntField(default=1)
     group_stu = fields.IntField(default=1)
-    group_rcv = fields.JSONField(null=True)
+    group_rcv = fields.CharField(max_length=32)
     group_create_usr = fields.CharField(max_length=64)
     group_update_usr = fields.CharField(max_length=64)
     group_create_dt = fields.DatetimeField(null=True,auto_now_add=True)
@@ -55,3 +55,4 @@ class RcvGroup(Model):
 
     class Meta:
         table = 'nfy_rcv_group'
+        unique_together = ('group_id','group_rcv')

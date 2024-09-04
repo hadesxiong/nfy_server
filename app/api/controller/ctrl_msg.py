@@ -7,7 +7,7 @@ from app.core.rabbit import create_rb_channel
 
 # 引入模型
 from app.models.notify import NfyChnl,NfyTmpl,NfyRec
-from app.models.receiver import RcvBark,RcvNtfy
+from app.models.receiver import RcvBark,RcvNtfy,RcvGroup
 from app.api.schema.sch_msg import MsgData
 
 # 引入错误内容
@@ -51,12 +51,18 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from
  
         if msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'all':
             rcv_list = await RcvBark.all()
-        elif msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] != 'all':
-            pass
+        elif msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'single':
+            rcv_list = await RcvBark.filter(rcv_id=f'rcv_{message_data["msg_target"]}')
+        elif msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'group':
+            rcv_group = await RcvGroup.filter(group_id=f'group_{message_data["msg_target"]}').values_list('group_rcv',flat=True)
+            rcv_list = await RcvBark.filter(rcv_id__in=rcv_group).all()
         elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'all':
             rcv_list = await RcvNtfy.all()
-        elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] != 'all':
-            pass
+        elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'single':
+            rcv_list = await RcvNtfy.filter(rcv_id=f'rcv_{message_data["msg_target"]}')
+        elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'group':
+            rcv_group = await RcvGroup.filter(group_id=f'group_{message_data["msg_target"]}').values_list('group_rcv',flat=True)
+            rcv_list = await RcvNtfy.filter(rcv_id__in=rcv_group).all()
         else:
             raise CustomHTTPException(
                 status_code= status.HTTP_400_BAD_REQUEST,detail='频道错误',err_code=13001)

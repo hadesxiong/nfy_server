@@ -42,16 +42,17 @@ CREATE TABLE IF NOT EXISTS "nfy_rcv_bark" (
 );
 CREATE TABLE IF NOT EXISTS "nfy_rcv_group" (
     "id" SERIAL NOT NULL PRIMARY KEY,
-    "group_id" VARCHAR(32) NOT NULL UNIQUE,
+    "group_id" VARCHAR(32) NOT NULL,
     "group_name" VARCHAR(128) NOT NULL,
     "group_type" INT NOT NULL  DEFAULT 1,
     "group_stu" INT NOT NULL  DEFAULT 1,
-    "group_rcv" JSONB,
+    "group_rcv" VARCHAR(32) NOT NULL,
     "group_create_usr" VARCHAR(64) NOT NULL,
     "group_update_usr" VARCHAR(64) NOT NULL,
     "group_create_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     "group_update_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
-    "group_ext_data" JSONB
+    "group_ext_data" JSONB,
+    CONSTRAINT "uid_nfy_rcv_gro_group_i_8daca6" UNIQUE ("group_id", "group_rcv")
 );
 CREATE TABLE IF NOT EXISTS "nfy_rcv_main" (
     "id" SERIAL NOT NULL PRIMARY KEY,

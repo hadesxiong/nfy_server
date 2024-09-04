@@ -135,7 +135,16 @@ async def get_current_user(
                 err_code = 11006
             )
         
-        return username
+        try:
+            usr_ins = await UserAuth.get(usr_name=username)
+            return usr_ins.usr_id
+        
+        except:
+            raise CustomHTTPException(
+                status_code = status.HTTP_401_UNAUTHORIZED,
+                detail = '用户验证失败',
+                err_code = 11008
+            )
     
     except ExpiredSignatureError:
         
