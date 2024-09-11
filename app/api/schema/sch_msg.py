@@ -14,6 +14,8 @@ class MsgData(BaseModel):
     msg_rcv: str = Field(default='all', alias='receive')
     msg_target: str | None = Field(default=None,alias='target')
     msg_data: Dict[str,Any] = Field(alias='data')
+    msg_url: str | None = Field(default=None, alias='link')
+    msg_url_data: Dict[str,Any] | None = Field(default=None, alias='args')
 
     @field_validator('msg_data')
     def msg_data_not_empty(cls,v):

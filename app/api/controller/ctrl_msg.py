@@ -77,7 +77,8 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from
                         'key': each.rcv_key,
                         'iv': each.rcv_iv
                     },
-                    'detail': message_data['msg_data']
+                    'detail': message_data['msg_data'],
+                    'url_args': message_data['msg_url_data']
                 }
 
             elif msg_headers['chnl_type'] == 2:

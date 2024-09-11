@@ -27,8 +27,14 @@ async def push_notify(msg:Message) -> None:
                 'usr_iv': msg_data['receive']['iv'],
                 'title': msg.headers['tmpl_title'],
                 'icon': msg.headers['tmpl_args']['tmpl_icon'],
-                'body': msg.headers['tmpl_args']['tmpl_body'].format(**msg_data['detail']) 
+                'body': msg.headers['tmpl_args']['tmpl_body'].format(**msg_data['detail']), 
             }
+
+            if msg.headers['tmpl_args'].get('tmpl_url',None):
+                try:
+                    bark_kwargs['url'] = msg.headers['tmpl_args']['tmpl_url'].format(**msg_data['url_args'])
+                except:
+                    bark_kwargs['url'] = msg.headers['tmpl_args']['tmpl_url']
 
             send_rslt  = send_bark_nfy(**bark_kwargs)
 
@@ -48,6 +54,12 @@ async def push_notify(msg:Message) -> None:
                 'icon': msg.headers['tmpl_args']['tmpl_icon'],
                 'message': msg.headers['tmpl_args']['tmpl_body'].format(**msg_data['detail']) 
             }
+
+            if msg.headers['tmpl_args'].get('tmpl_url',None):
+                try:
+                    ntfy_kwargs['click'] = msg.headers['tmpl_args']['tmpl_url'].format(**msg_data['url_args'])
+                except:
+                    ntfy_kwargs['click'] = msg.headers['tmpl_args']['tmpl_url']
 
             send_rslt = send_ntfy_nfy(**ntfy_kwargs)
 
