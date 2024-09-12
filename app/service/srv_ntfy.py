@@ -9,7 +9,8 @@ def send_ntfy_nfy(**kwargs):
         'title': None,
         'priority': 3,
         'click': None,
-        'icon': None
+        'icon': None,
+        'actions': None
     }
 
     for k,v in defaults.items():

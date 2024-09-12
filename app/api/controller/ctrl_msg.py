@@ -89,7 +89,8 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from
                         'topic': each.rcv_topic,
                         'role': each.rcv_role
                     },
-                    'detail': message_data['msg_data']
+                    'detail': message_data['msg_data'],
+                    'url_args': message_data['msg_url_data']
                 }
 
             msg_body = json.dumps(msg_body).encode('utf-8')
