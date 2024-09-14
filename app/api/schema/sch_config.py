@@ -1,7 +1,7 @@
 # coding=utf8
-from pydantic import BaseModel,Field
-from datetime import datetime
-from typing import Dict,Any
+import json
+from pydantic import BaseModel,Field,field_validator
+from typing import Dict,Any,List
 
 from app.api.schema.basic import ResBasic
 
@@ -40,11 +40,63 @@ class TemplateUpdateForm(BaseModel):
         extra = 'forbid'
 
 class TemplateUpdateQuery(TemplateUpdateForm):
+
     tmpl_id: str | None = Field(default=None, alias='tmpl')
     form: TemplateUpdateForm | None  = Field(default=None, alias='data')
 
     class Config:
         extra = 'allow'
+
+class ReceiverBark(BaseModel):
+
+    rcv_id: str | None = Field(default=None, alias='id')
+    device_key: str | None = Field(default=None, alias='device')
+    key: str | None = Field(default=None, alias='key')
+    iv: str | None = Field(default=None, alias='iv')
+    class Config:
+        extra = 'forbid'
+
+class ReceiverNtfy(BaseModel):
+
+    rcv_id: str | None = Field(default=None, alias='id')
+    rcv_name: str | None = Field(default=None, alias='name')
+    rcv_role: int | None = Field(default=None, alias='role')
+    rcv_topic: str | None = Field(default=None, alias='topic')
+    rcv_perm: int | None = Field(default=None, alias='permission')
+
+    class Config:
+        extra = 'forbid'
+
+class ReceiverUpdateForm(ReceiverBark,ReceiverNtfy):
+
+    rcv_id: str | None = Field(default=None, alias='target')
+    rcv_type: int | None = Field(default=None, alias='type')
+    rcv_stu: int | None = Field(default=None, alias='statu')
+    rcv_data: ReceiverNtfy | ReceiverBark | None = Field(default=None, alias='data')
+
+    @field_validator('rcv_data')
+    def rcv_data_not_empty(cls,v):
+        if not v:
+            try:
+                raise ValueError('rcv_data cannot be empty')
+            except ValueError as e:
+                error_info = {
+                    'type': '类型错误',
+                    'msg': str(e)
+                }
+                return json.dumps(error_info)
+        return v
+    
+class ReceoverGroupUpdate(BaseModel):
+
+    group_id: str | None = Field(default=None, alias='group')
+    group_name: str | None = Field(default=None, alias='name')
+    group_type: int | None = Field(default=None, alias='type')
+    group_stu: int | None = Field(default=None, alias='statu')
+    group_rcv: str | List | None = Field(default=None, alias='receiver')
+
+    class config:
+        extra = 'forbid'
 
 # Response模型
 class UpdateRst(ResBasic):

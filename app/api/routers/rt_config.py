@@ -49,3 +49,14 @@ async def updateTemplateInfo(
 
     return UpdateRst(code = 200, msg = 'success',
         target = rslt['id'],dt = rslt['dt'])
+
+
+# 更新接收人信息
+@config_rt.post('/receiverUpdate')
+
+async def updateReceiverInfo(
+    form_data:dict,
+    current_user: str=Depends(get_current_user)):
+
+    print(form_data)
+    return form_data
