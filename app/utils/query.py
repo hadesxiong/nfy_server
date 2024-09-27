@@ -31,3 +31,13 @@ def build_query_exp(filters:Dict[str,Any],logics:Dict[str,Any]=None) -> Any:
         rslt_query &= Q(**{query_key:value})
     
     return rslt_query
+
+def build_or_exp(keys:List[str],value:Any) -> Any:
+
+    rslt_query = Q()
+
+    for each_key in keys:
+
+        rslt_query |= Q(**{f'{each_key}__icontains':value})
+
+    return rslt_query

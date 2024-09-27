@@ -8,7 +8,7 @@ from bson.objectid import ObjectId
 
 from app.models.notify import NfyChnl,NfyTmpl
 from app.models.receiver import RcvMain,RcvBark, RcvNtfy, RcvGroup
-from app.utils.query import build_query_exp
+from app.utils.query import build_query_exp, build_or_exp
 from app.api.controller.ctrl_error import CustomHTTPException
 
 # 创建/更新频道
@@ -184,3 +184,181 @@ async def update_receiver_handler(
 
     else:
         raise CustomHTTPException(status_code = 400, detail = '数据异常', err_code = 12004)
+
+# 查询频道
+async def get_channel_handler(filters):
+
+    '''
+    调整filters
+    1. start_dt ,end_dt 调整为(start_dt,end_dt)
+    2. key_word 剥离另外查询
+    '''
+
+    channel_logic = {'chnl_update_dt':'range'}
+    or_query = Q()
+
+    if filters.get('key_word'):
+        or_query |= build_or_exp(
+            ['chnl_id','chnl_name','chnl_host','chnl_update_usr'],
+            filters.get('key_word'))
+        
+        filters.pop('key_word',None)
+
+    filter_dict = {
+        k:v for k,v in filters.items() \
+        if k not in ['page_no','page_size','order_by']
+    }
+
+    and_query = build_query_exp(filter_dict,channel_logic)
+
+    order_dict = {
+        'id':'chnl_id','-id':'-chnl_id','name':'chnl_name','-name':'-chnl_name',
+        'stu':'chnl_stu','-stu':'-chnl_stu','type':'chnl_type','-type':'-chnl_type',
+        'dt':'chnl_update_dt','-dt':'-chnl_update_dt'
+    }
+    order_index = order_dict.get(filters.get('order_by'),'-chnl_update_dt')
+
+    try:
+        if filters.get('page_no'):
+            chnl_rslt = await paginate(
+                NfyChnl.filter(and_query).filter(or_query).order_by(order_index),
+                Params(page=filters['page_no'],size=filters['page_size'])
+            )
+        else:
+            chnl_rslt = await NfyChnl.filter(and_query).filter(or_query)
+
+        return chnl_rslt
+    
+    except:
+        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12003)
+    
+# 查询模版
+async def get_template_handler(filters):
+
+    # 逻辑相似，轻易get_channel_handler为准
+    template_logic = {'tmpl_update_dt':'range'}
+    or_query = Q()
+
+    if filters.get('key_word'):
+        or_query |= build_or_exp(
+            ['tmpl_id','tmpl_chnl','tmpl_title','tmpl_update_usr'],
+            filters.get('key_word')
+        )
+
+        filters.pop('key_word',None)
+
+    filter_dict = {
+        k:v for k,v in filters.items() \
+        if k not in ['page_no','page_size','order_by']
+    }
+
+    and_query = build_query_exp(filter_dict,template_logic)
+
+    order_dict = {
+        'id':'tmpl_id','-id':'-tmpl_id','title':'tmpl_title','-title':'-tmpl_title',
+        'dt':'tmpl_update_dt','-dt':'-tmpl_update_dt'
+    }
+
+    order_index = order_dict.get(filters.get('order_by'),'-tmpl_update_dt')
+
+    try:
+        if filters.get('page_no'):
+            tmpl_rslt = await paginate(
+                NfyTmpl.filter(and_query).filter(or_query).order_by(order_index),
+                Params(page=filters['page_no'],size=filters['page_size'])
+            )
+        else:
+            tmpl_rslt = await NfyTmpl.filter(and_query).filter(or_query)
+
+        return tmpl_rslt
+    
+    except:
+        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12004)
+    
+# 查询用户
+async def get_receiver_handler(filters):
+
+    receiver_logic = {'rcv_update_dt':'range'}
+    or_query = Q()
+
+    if filters.get('key_word'):
+        or_query |= build_or_exp(
+            ['rcv_id','rcv_chnl','rcv_update_usr'],
+            filters.get('key_word')
+        )
+
+        filters.pop('key_word',None)
+
+    filter_dict = {
+        k:v for k,v in filters.items() \
+        if k not in ['page_no','page_size','order_by']
+    }
+
+    and_query = build_query_exp(filter_dict,receiver_logic)
+
+    order_dict = {
+        'id':'rcv_id','-id':'-rcv_id','channel':'rcv_chnl','-channel':'-rcv_channel',
+        'dt':'rcv_update_dt','-dt':'-rcv_update_dt'
+    }
+
+    order_index = order_dict.get(filters.get('order_by'),'-rcv_update_dt')
+
+    try:
+        if filters.get('page_no'):
+            rcv_rslt = await paginate(
+                RcvMain.filter(and_query).filter(or_query).order_by(order_index),
+                Params(page=filters['page_no'],size=filters['page_size'])
+            )
+        else:
+            rcv_rslt = await RcvMain.filter(and_query).filter(or_query)
+
+        return rcv_rslt
+
+    except:
+        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code='12005')
+    
+# 查询分组
+async def get_rcvgroup_handler(filters):
+
+    rcvgroup_logic = {'group_update_dt':'range'}
+    or_query = Q()
+
+    if filters.get('key_word'):
+        or_query |= build_or_exp(
+            ['group_id','group_name','group_update_usr'],
+            filters.get('key_word')
+        )
+        
+        filters.pop('key_word',None)
+
+    filter_dict = {
+        k:v for k,v in filters.items() \
+        if k not in ['page_no','page_size','order_by']
+    }
+
+    and_query = build_query_exp(filter_dict,rcvgroup_logic)
+
+    order_dict = {
+        'id':'group_id','-id':'-group_id','name':'group_name','-name':'-group_name',
+        'dt':'group_update_dt','-dt':'-group_update_dt'
+    }
+    
+    order_index = order_dict.get(filters.get('order_by'),'-group_update_dt')
+
+    try:
+        if filters.get('page_no'):
+            group_rslt = await paginate(
+                RcvGroup.filter(and_query).filter(or_query).order_by(order_index).distinct().values_list('group_id',flat=True),
+                Params(page=filters['page_no'],size=filters['page_size'])
+            )
+        else:
+            group_rslt = await RcvGroup.filter(and_query).filter(or_query)
+
+        # 对group_rslt做去重
+        return group_rslt
+    
+    except Exception as e:
+        print(e)
+
+    except:
+        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12006)

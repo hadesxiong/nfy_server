@@ -50,8 +50,6 @@ async def get_userinfo_handler(filters):
         Params(page=filters['page_no'],size=filters['page_size'])
     )
 
-    print(user_rslt)
-
     return user_rslt
 
 # 用户注册

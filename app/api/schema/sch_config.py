@@ -1,6 +1,7 @@
 # coding=utf8
 import json
 from pydantic import BaseModel,Field,field_validator
+from datetime import datetime
 from typing import Dict,Any,List
 
 from app.api.schema.basic import ResBasic
@@ -28,6 +29,19 @@ class ChannelUpdateQuery(ChannelUpdateForm):
     class Config:
         extra = 'allow'
 
+class ChannelQueryForm(BaseModel):
+    chnl_id: str | None = Field(default=None,alias='channel')
+    chnl_type: int | None = Field(default=None, alias='type')
+    start_dt: str | None = Field(default=None, alias='start')
+    end_dt: str | None = Field(default=None, alias='end')
+    key_word: str | None = Field(default=None, alias='key')
+    page_no: int | None = Field(default=1,alias='page')
+    page_size: int | None = Field(default=10,alias='size')
+    order_by: str | None = Field(default=None,alias='order')
+
+    class Config:
+        extra = 'forbid'
+
 class TemplateUpdateForm(BaseModel):
 
     tmpl_title: str | None = Field(default=None,alias='title')
@@ -46,6 +60,19 @@ class TemplateUpdateQuery(TemplateUpdateForm):
 
     class Config:
         extra = 'allow'
+
+class TemplateQueryForm(BaseModel):
+    tmpl_id: str | None = Field(default=None,alias='template')
+    tmpl_chnl: str | None = Field(default=None,alias='channel')
+    start_dt: str | None = Field(default=None,alias='start')
+    end_dt: str | None = Field(default=None,alias='end')
+    key_word: str | None = Field(default=None, alias='key')
+    page_no: int | None = Field(default=1,alias='page')
+    page_size: int | None = Field(default=10,alias='size')
+    order_by: str | None = Field(default=None,alias='order')
+
+    class Config:
+        extra = 'forbid'
 
 class ReceiverBark(BaseModel):
 
@@ -98,8 +125,70 @@ class ReceoverGroupUpdate(BaseModel):
     class config:
         extra = 'forbid'
 
+class ReceiverQueryForm(BaseModel):
+
+    target_class: int = Field(default=1,alias='tar_class')
+    target_id: str | None = Field(default=None,alias='target')
+    group_name: str | None = Field(default=None,alias='name')
+    rcv_chnl: str | None = Field(default=None,alias='channel')
+    rcv_type: int | None = Field(default=None,alias='type')
+    start_dt: str | None = Field(default=None,alias='start')
+    end_dt: str | None = Field(default=None,alias='end')
+    key_word: str | None = Field(default=None,alias='key')
+    page_no: int | None = Field(default=1,alias='page')
+    page_size: int | None = Field(default=10,alias='size')
+    order_by: str | None = Field(default=None,alias='order')
+
+    class Config:
+        extra = 'forbid'
+    
 # Response模型
 class UpdateRst(ResBasic):
 
     target: str | None = Field(default=None)
     dt: str | None = Field(default=None)
+
+class ChannelInfoRst(BaseModel):
+
+    chnl_id: str | None = Field(default=None)
+    chnl_name: str | None = Field(default=None)
+    chnl_type: int | None = Field(default=None)
+    chnl_auth_method: int | None =Field(default=None)
+    chnl_host: str | None = Field(default=None)
+    chnl_update_dt: datetime | None = Field(default=None)
+    chnl_update_usr: str | None = Field(default=None)
+
+    class Config:
+
+        extra = 'allow'
+        from_attributes = True
+
+class ChannelInfoRes(ChannelInfoRst):
+
+    data: ChannelInfoRst | List[ChannelInfoRst] | None = Field(default=None)
+    page: int = Field(default=1)
+    size: int = Field(default=10)
+    total: int | None = Field(default=None)
+    has_next: bool | None = Field(default=None)
+
+class TemplateInfoRst(BaseModel):
+
+    tmpl_id: str | None = Field(default=None)
+    tmpl_chnl: str | None = Field(default=None)
+    tmpl_title: str | None = Field(default=None)
+    tmpl_args: dict | None = Field(default=None)
+    tmpl_update_usr: str | None = Field(default=None)
+    tmpl_update_dt: datetime | None = Field(default=None)
+
+    class Config:
+
+        extra = 'allow'
+        from_attributes = True
+
+class TemplateInfoRes(TemplateInfoRst):
+
+    data: TemplateInfoRst | List[TemplateInfoRst] | None = Field(default=None)
+    page: int = Field(default=1)
+    size: int = Field(default=10)
+    total: int | None = Field(default=None)
+    has_next: bool | None = Field(default=None)

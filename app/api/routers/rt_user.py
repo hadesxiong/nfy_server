@@ -23,16 +23,16 @@ async def getUser(
         params: UserInfoQuery = Depends(),
         current_user: str = Depends(get_current_user)):
         
-    # 清理查询参数
+        # 清理查询参数
         fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
         
-        rst = await get_userinfo_handler(fltr_pars)
+        rslt = await get_userinfo_handler(fltr_pars)
 
         return UserInfoRes(
             code = 200,
             msg = 'success',
-            data = rst.items,
-            has_next = rst.page < rst.pages
+            data = rslt.items,
+            has_next = rslt.page < rslt.pages
         )
 
 # 用户注册
