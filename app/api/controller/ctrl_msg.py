@@ -1,9 +1,13 @@
 # coding=utf8
 import json
 from fastapi import status
+from fastapi_pagination import Params
+from fastapi_pagination.ext.tortoise import paginate
 from aio_pika import Message
 from bson import ObjectId
 from app.core.rabbit import create_rb_channel
+
+from tortoise.expressions import Q
 
 # 引入模型
 from app.models.notify import NfyChnl,NfyTmpl,NfyRec
@@ -12,6 +16,8 @@ from app.api.schema.sch_msg import MsgData
 
 # 引入错误内容
 from app.api.controller.ctrl_error import CustomHTTPException
+
+from app.utils.query import build_query_exp,build_or_exp,paginate_query
 
 # 推送消息到rabbit
 async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from: str) -> str:
@@ -140,3 +146,40 @@ async def set_rec_data(rec_dict:dict) -> str:
     await rec_ins.save()
 
     return rec_ins.rec_id[4:]
+
+# 定义方法用来获取发送记录
+async def get_rec_handler(filters):
+
+    record_logic = {}
+
+    or_query = Q()
+    if filters.get('key_word'):
+        or_query |= build_or_exp(
+            ['rec_id','tmpl_id','rec_use','rec_msg','rec_data','rec_rcv','rec_batch'],
+            filters.get('key_word')
+        )
+
+        filters.pop('key_word',None)
+
+    filter_dict = {
+        k:v for k,v in filters.items() \
+        if k not in ['page_no','page_size','order_by']
+    }
+
+    and_query = build_query_exp(filter_dict,record_logic)
+
+    order_dict = {
+        'id':'rec_id','-id':'-rec_id','template':'tmpl_id','-template':'-tmpl_id',
+        'receiver':'rec_rcv','-receiver':'-rec_rcv',
+        'batch':'rec_batch','-batch':'-rec_batch',
+        'code':'rec_code','-code':'-rec_code'
+    }
+
+    order_index = order_dict.get(filters.get('order_by'),'-rec_id')
+
+    rec_rlst= await paginate(
+        NfyRec.filter(and_query).filter(or_query).order_by(order_index),
+        Params(page=filters['page_no'],size=filters['page_size'])
+    )
+
+    return rec_rlst

@@ -128,7 +128,9 @@ async def getTemplateInfo(
         return TemplateInfoRes(code=200,msg='success',data=rslt.items,has_next=rslt.page<rslt.pages)
     
 # 查询用户信息
-@config_rt.get('/receiverQuery')
+@config_rt.get('/receiverQuery',
+               response_model=ReceiverListRes,
+               response_model_exclude_unset=True)
 
 async def getReceiverInfo(
     params: ReceiverQueryForm = Depends(),
@@ -150,6 +152,18 @@ async def getReceiverInfo(
         fltr_pars.pop('target_class',None)
 
         rslt = await get_receiver_handler(fltr_pars)
+
+        if not fltr_pars.get('rcv_id'):
+            return ReceiverListRes(
+                code=200,msg='success',
+                data=rslt.items,has_next=rslt.page<rslt.pages
+            )
+        else:
+            return ReceiverListRes(
+                code=200,msg='success',
+                data=rslt[0] if len(rslt)>=1 else None
+            )
+
     
     elif int(fltr_pars['target_class']) == 2:
         fltr_pars['group_id'] = fltr_pars.get('target_id',None)
@@ -162,8 +176,34 @@ async def getReceiverInfo(
 
         rslt = await get_rcvgroup_handler(fltr_pars)
 
-    print(rslt)
+        print(rslt)
 
+        if not fltr_pars.get('group_id'):
+            return ReceiverListRes(
+                code=200,msg='success',
+                data=rslt['items'],has_next=rslt['page']<rslt['pages']
+            )
+        else:
+            return ReceiverListRes(
+                code=200,msg='success',
+                data=rslt[0] if len(rslt)>=1 else None
+            )
 
-    return {'1':1}
+# 查询分组明细
+@config_rt.get('/rcvGroupQuery',
+               response_model=ReceiverListRes,
+               response_model_exclude_unset=True)
 
+async def getRcvGroupInfo(
+    params: ReceiverQueryForm = Depends(),
+    current_user: str = Depends(get_current_user)):
+
+    # 清理查询参数,
+    fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None and k == 'target_id'}
+
+    if fltr_pars.get('target_id',None):
+
+        result = await get_rcvgourp_detail_handler(fltr_pars)
+        return ReceiverListRes(code=200,msg='success',data=result)
+    else:
+        return ReceiverListRes(code=300,msg='failed')

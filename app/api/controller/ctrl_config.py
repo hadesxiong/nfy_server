@@ -8,7 +8,7 @@ from bson.objectid import ObjectId
 
 from app.models.notify import NfyChnl,NfyTmpl
 from app.models.receiver import RcvMain,RcvBark, RcvNtfy, RcvGroup
-from app.utils.query import build_query_exp, build_or_exp
+from app.utils.query import build_query_exp, build_or_exp, distinct_query,paginate_query
 from app.api.controller.ctrl_error import CustomHTTPException
 
 # 创建/更新频道
@@ -343,22 +343,33 @@ async def get_rcvgroup_handler(filters):
         'dt':'group_update_dt','-dt':'-group_update_dt'
     }
     
-    order_index = order_dict.get(filters.get('order_by'),'-group_update_dt')
+    order_index = order_dict.get(filters.get('order_by'),'group_update_dt')
+
+    group_query = RcvGroup.filter(and_query).filter(or_query).order_by(order_index)
+    group_distinct = await distinct_query(group_query,'group_id','group_name')
 
     try:
         if filters.get('page_no'):
-            group_rslt = await paginate(
-                RcvGroup.filter(and_query).filter(or_query).order_by(order_index).distinct().values_list('group_id',flat=True),
-                Params(page=filters['page_no'],size=filters['page_size'])
-            )
-        else:
-            group_rslt = await RcvGroup.filter(and_query).filter(or_query)
+            group_rslt = await paginate_query(group_distinct,filters['page_no'],filters['page_size'])
 
-        # 对group_rslt做去重
+        else:
+            group_rslt = group_distinct[0] if len(group_distinct) > 0 else []
+
         return group_rslt
     
-    except Exception as e:
-        print(e)
-
     except:
         raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12006)
+    
+# 查询分组明细
+async def get_rcvgourp_detail_handler(filters):
+
+    try:
+        group_id = filters.get('target_id',None)
+        group_ins = await RcvGroup.filter(group_id=group_id).first()
+        group_rcv = await RcvGroup.filter(group_id=group_id).values_list('group_rcv',flat=True)
+        group_ins.group_rcv = group_rcv
+        
+        return group_ins
+
+    except:
+        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12007)

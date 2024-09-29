@@ -141,7 +141,7 @@ class ReceiverQueryForm(BaseModel):
 
     class Config:
         extra = 'forbid'
-    
+
 # Response模型
 class UpdateRst(ResBasic):
 
@@ -188,6 +188,43 @@ class TemplateInfoRst(BaseModel):
 class TemplateInfoRes(TemplateInfoRst):
 
     data: TemplateInfoRst | List[TemplateInfoRst] | None = Field(default=None)
+    page: int = Field(default=1)
+    size: int = Field(default=10)
+    total: int | None = Field(default=None)
+    has_next: bool | None = Field(default=None)
+
+class ReceiverInfoRst(BaseModel):
+
+    rcv_id : str | None = Field(default=None)
+    rcv_chnl: str | None = Field(default=None)
+    rcv_type: int | None = Field(default=None)
+    rcv_update_usr: str | None = Field(default=None)
+    rcv_update_dt: datetime | None = Field(default=None)
+
+    class Config:
+
+        extra = 'allow'
+        from_attributes = True
+
+class RcvGroupInfoRst(BaseModel):
+
+    group_id: str | None = Field(default=None)
+    group_name: str | None = Field(default=None)
+    group_type: int | None = Field(default=None)
+    group_rcv: str | list | None = Field(default=None)
+    group_update_usr: str | None = Field(default=None)
+    group_update_dt: datetime | None = Field(default=None)
+
+    class Config:
+
+        extra = 'allow'
+        from_attributes = True
+
+class ReceiverListRes(ReceiverInfoRst,RcvGroupInfoRst):
+
+    data: ReceiverInfoRst | List[ReceiverInfoRst] | \
+        RcvGroupInfoRst | List[RcvGroupInfoRst] | \
+        None = Field(default=None)
     page: int = Field(default=1)
     size: int = Field(default=10)
     total: int | None = Field(default=None)

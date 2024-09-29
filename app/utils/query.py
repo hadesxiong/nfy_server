@@ -1,6 +1,7 @@
 # coding=utf8
 from typing import List, Dict, Any
 from tortoise.expressions import Q
+from tortoise.queryset import QuerySet
 
 def build_query_exp(filters:Dict[str,Any],logics:Dict[str,Any]=None) -> Any:
 
@@ -41,3 +42,49 @@ def build_or_exp(keys:List[str],value:Any) -> Any:
         rslt_query |= Q(**{f'{each_key}__icontains':value})
 
     return rslt_query
+
+async def distinct_query(queryset,*fields):
+
+    '''
+    对Tortoise-orm的queryset进行去重
+
+    :param queryset: 需要去重的queryset对象
+    :param fields: 依据去重的字段名称
+    :return: 去重后的模型对象
+    '''
+
+    items = await queryset.all()
+
+    # 创建一个字典用于存储去重后的对象
+    unique_items = {}
+
+    for item in items:
+
+        # 创建一个元组，包含所有需要去重的字段的值
+        key = tuple(getattr(item,field) for field in fields)
+        if key not in unique_items:
+            unique_items[key] = item
+
+    # 返回去重后的模型对象列表
+    return list(unique_items.values())
+
+async def paginate_query(items,page,size):
+
+    '''
+    对列表进行分页，并返回分页信息。
+
+    :param items: 模型对象列表。
+    :param page: 当前页码。
+    :param size: 每页大小。
+    :return: 分页后的结果和分页信息。
+    '''
+
+    total = len(items)
+    page = int(page)
+    size = int(size)
+    offset = (page - 1) * size
+    items_page = items[offset:offset + size]
+    pages = (total + size - 1) // size  # 计算总页数，向上取整
+    
+    return {'items': items_page,'total': total,
+            'page': page,'size': size,'pages': pages}
