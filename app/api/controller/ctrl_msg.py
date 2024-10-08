@@ -56,25 +56,46 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from
         message_data = msg_dict.model_dump()
  
         if msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'all':
+
             rcv_list = await RcvBark.all()
+
         elif msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'single':
+
             rcv_list = await RcvBark.filter(rcv_id=f'rcv_{message_data["msg_target"]}')
+
         elif msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'group':
+
             rcv_group = await RcvGroup.filter(group_id=f'group_{message_data["msg_target"]}').values_list('group_rcv',flat=True)
             rcv_list = await RcvBark.filter(rcv_id__in=rcv_group).all()
+
+        elif msg_headers['chnl_type'] == 1 and message_data['msg_rcv'] == 'custom':
+
+            target_list = list(map(lambda x: 'rcv_'+x, message_data['msg_target']))
+            rcv_list = await RcvBark.filter(rcv_id__in=target_list).all()
+
         elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'all':
+
             rcv_list = await RcvNtfy.all()
+
         elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'single':
+
             rcv_list = await RcvNtfy.filter(rcv_id=f'rcv_{message_data["msg_target"]}')
+
         elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'group':
+
             rcv_group = await RcvGroup.filter(group_id=f'group_{message_data["msg_target"]}').values_list('group_rcv',flat=True)
             rcv_list = await RcvNtfy.filter(rcv_id__in=rcv_group).all()
+
+        elif msg_headers['chnl_type'] == 2 and message_data['msg_rcv'] == 'custom':
+
+            target_list = list(map(lambda x: 'rcv_'+x, message_data['msg_target']))
+            rcv_list = await RcvNtfy.filter(rcv_id__in=target_list).all()
+
         else:
             raise CustomHTTPException(
                 status_code= status.HTTP_400_BAD_REQUEST,detail='频道错误',err_code=13001)
 
         for each in rcv_list:
-
             if msg_headers['chnl_type'] == 1:
                 msg_body = {
                     'receive': {
@@ -83,9 +104,11 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from
                         'key': each.rcv_key,
                         'iv': each.rcv_iv
                     },
-                    'detail': message_data['msg_data'],
-                    'url_args': message_data['msg_url_data']
+                    # 'detail': message_data['msg_data'],
+                    # 'url_args': message_data['msg_url_data']
                 }
+                # msg_body['detail'] = message_data['msg_data'] if message_data['msg_rcv'] != 'custom' else message_data[each.rcv_id]['detail']
+                # msg_body['url_args'] = message_data['msg_url_data'] if message_data['msg_rcv'] != 'custom' else message_data[each.rcv_id]['args']
 
             elif msg_headers['chnl_type'] == 2:
                 msg_body = {
@@ -95,9 +118,23 @@ async def push_msg_queue(chnl_id:str, tmpl_id: str, msg_dict: MsgData, call_from
                         'topic': each.rcv_topic,
                         'role': each.rcv_role
                     },
-                    'detail': message_data['msg_data'],
-                    'url_args': message_data['msg_url_data']
+                    # 'detail': message_data['msg_data'],
+                    # 'url_args': message_data['msg_url_data']
                 }
+
+            msg_body['detail'] = (
+                message_data['msg_data'] 
+                if message_data['msg_rcv'] != 'custom' 
+                else message_data['msg_data'][each.rcv_id]['detail']
+            )
+            
+            msg_body['url_args'] = (
+                message_data['msg_url_data'] 
+                if message_data['msg_rcv'] != 'custom' 
+                else message_data['msg_data'][each.rcv_id]['args']
+            )
+
+            print(msg_body)
 
             msg_body = json.dumps(msg_body).encode('utf-8')
             msg_ins = Message(headers= msg_headers, body=msg_body, **msg_properties)

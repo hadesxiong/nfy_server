@@ -99,10 +99,11 @@ class ReceiverUpdateForm(ReceiverBark,ReceiverNtfy):
     rcv_id: str | None = Field(default=None, alias='target')
     rcv_type: int | None = Field(default=None, alias='type')
     rcv_stu: int | None = Field(default=None, alias='statu')
-    rcv_data: ReceiverNtfy | ReceiverBark | None = Field(default=None, alias='data')
+    rcv_chnl: str | None = Field(default=None, alias='channel')
+    form: ReceiverNtfy | ReceiverBark | None = Field(default=None, alias='data')
 
-    @field_validator('rcv_data')
-    def rcv_data_not_empty(cls,v):
+    @field_validator('form')
+    def form_not_empty(cls,v):
         if not v:
             try:
                 raise ValueError('rcv_data cannot be empty')
@@ -114,13 +115,13 @@ class ReceiverUpdateForm(ReceiverBark,ReceiverNtfy):
                 return json.dumps(error_info)
         return v
     
-class ReceoverGroupUpdate(BaseModel):
+class ReceiverGroupUpdate(BaseModel):
 
     group_id: str | None = Field(default=None, alias='group')
     group_name: str | None = Field(default=None, alias='name')
     group_type: int | None = Field(default=None, alias='type')
     group_stu: int | None = Field(default=None, alias='statu')
-    group_rcv: str | List | None = Field(default=None, alias='receiver')
+    group_rcv: str | List[str] | None = Field(default=None, alias='receiver')
 
     class config:
         extra = 'forbid'

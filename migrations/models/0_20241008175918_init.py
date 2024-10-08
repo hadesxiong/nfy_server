@@ -32,6 +32,18 @@ CREATE TABLE IF NOT EXISTS "nfy_usr_main" (
     "usr_create_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     "usr_ext_data" JSONB
 );
+CREATE TABLE IF NOT EXISTS "nfy_group_detail" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "group_id" VARCHAR(32) NOT NULL,
+    "group_rcv" VARCHAR(32) NOT NULL,
+    "detail_stu" INT NOT NULL  DEFAULT 1,
+    "detail_create_usr" VARCHAR(64) NOT NULL,
+    "detail_create_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
+    "detail_update_usr" VARCHAR(64) NOT NULL,
+    "detail_update_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
+    "detail_ext_data" JSONB,
+    CONSTRAINT "uid_nfy_group_d_group_i_0aa333" UNIQUE ("group_id", "group_rcv", "detail_stu")
+);
 CREATE TABLE IF NOT EXISTS "nfy_rcv_bark" (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "rcv_id" VARCHAR(32) NOT NULL UNIQUE,
@@ -46,13 +58,11 @@ CREATE TABLE IF NOT EXISTS "nfy_rcv_group" (
     "group_name" VARCHAR(128) NOT NULL,
     "group_type" INT NOT NULL  DEFAULT 1,
     "group_stu" INT NOT NULL  DEFAULT 1,
-    "group_rcv" VARCHAR(32) NOT NULL,
     "group_create_usr" VARCHAR(64) NOT NULL,
     "group_update_usr" VARCHAR(64) NOT NULL,
     "group_create_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
     "group_update_dt" TIMESTAMPTZ   DEFAULT CURRENT_TIMESTAMP,
-    "group_ext_data" JSONB,
-    CONSTRAINT "uid_nfy_rcv_gro_group_i_8daca6" UNIQUE ("group_id", "group_rcv")
+    "group_ext_data" JSONB
 );
 CREATE TABLE IF NOT EXISTS "nfy_rcv_main" (
     "id" SERIAL NOT NULL PRIMARY KEY,

@@ -1,6 +1,6 @@
 # coding=utf8
 from fastapi import APIRouter,Depends,Request
-
+from typing import Union
 # from app.api.schema.sch_config import ChannelUpdateQuery, TemplateUpdateQuery, UpdateRst
 # from app.api.schema.sch_config import ChannelQueryForm, ChannelInfoRes
 # from app.api.schema.sch_config import TemplateQueryForm, TemplateInfoRes
@@ -54,16 +54,40 @@ async def updateTemplateInfo(
     return UpdateRst(code = 200, msg = 'success',
         target = rslt['id'],dt = rslt['dt'])
 
-
 # 更新接收人信息
-@config_rt.post('/receiverUpdate')
+@config_rt.post('/receiverUpdate',
+                response_model=UpdateRst,
+                response_model_exclude_unset=True)
 
 async def updateReceiverInfo(
-    form_data:dict,
-    current_user: str=Depends(get_current_user)):
+    form_data:ReceiverUpdateForm,
+    current_user: str = Depends(get_current_user)):
 
-    print(form_data)
-    return form_data
+    # 清理参数
+    fltr_data =  {k:v for k,v in form_data.model_dump()['form'].items() if v is not None}
+    rslt = await update_receiver_handler(
+        receiver_id=form_data.model_dump().get('rcv_id',None),
+        receiver_type=form_data.model_dump().get('rcv_type',None),
+        receiver_channel=form_data.model_dump().get('rcv_chnl',None),
+        receiver_data=fltr_data,
+        user=current_user
+    )
+
+    return UpdateRst(code = 200, msg = 'success',
+        target = rslt['id'], dt = rslt['dt'])
+
+# 更新接受群组
+@config_rt.post('/rcvGroupUpdate')
+
+async def updateRcvGroupInfo(
+    form_data:ReceiverGroupUpdate,
+    current_user: str = Depends(get_current_user)):
+
+    # 清理参数
+    fltr_data = {k:v for k,v in form_data.model_dump().items() if v is not None}
+
+
+    return UpdateRst(code=200,msg='success')
 
 # 查询频道信息
 @config_rt.get('/channelQuery',

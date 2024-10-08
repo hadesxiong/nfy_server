@@ -1,7 +1,7 @@
 # coding=utf8
 from fastapi_pagination import Params
 from fastapi_pagination.ext.tortoise import paginate
-from typing import Dict,Any
+from typing import List,Dict,Any
 from tortoise.expressions import Q
 from datetime import datetime,timezone,timedelta
 from bson.objectid import ObjectId
@@ -135,6 +135,8 @@ async def update_template_handler(
 # 创建/更新用户
 async def update_receiver_handler(
         receiver_id: str | None = None,
+        receiver_type: int | None = None,
+        receiver_channel: str | None = None,
         receiver_data: Dict[str,Any] | None = None,
         user: str | None = None):
     
@@ -142,11 +144,11 @@ async def update_receiver_handler(
     if receiver_id:
         
         try:
-            rcvMain_ins = RcvMain.get(Q(rcv_id=receiver_id))
+            rcvMain_ins = await RcvMain.get(Q(rcv_id=receiver_id))
             if rcvMain_ins.rcv_type == 1:
-                rcv_ins = RcvBark.get(Q(rcv_id=receiver_id))
+                rcv_ins = await RcvBark.get(Q(rcv_id=receiver_id))
             elif rcvMain_ins.rcv_type == 2:
-                rcv_ins = RcvNtfy.get(Q(rcv_id=receiver_id))
+                rcv_ins = await RcvNtfy.get(Q(rcv_id=receiver_id))
 
             update_fields = {}
             main_update_fields = {}
@@ -181,9 +183,113 @@ async def update_receiver_handler(
     
     elif receiver_id is None and len(receiver_data) != 0:
         print('chuangjian')
+        try:
+            rcv_dt = datetime.now(timezone(timedelta(hours=8)))
+            rcvMain_new = {
+                'rcv_id': f'rcv_{ObjectId()}',
+                'rcv_channel': receiver_channel,
+                'rcv_type': receiver_type,
+                'rcv_create_dt': rcv_dt,
+                'rcv_update_dt': rcv_dt,
+                'rcv_create_usr': user,
+                'rcv_update_usr': user
+            }
+
+            receiver_data.update({
+                'rcv_id': rcvMain_new['rcv_id']
+            })
+
+            try:
+                if receiver_type == 1:
+                    rcv_rslt = await RcvBark.create(**receiver_data)
+                elif receiver_type == 2:
+                    rcv_rslt = await RcvNtfy.create(**receiver_data)
+                else:
+                    raise CustomHTTPException(status_code = 400, detail='数据不合法', err_code=12006)
+
+                rcvMain_rslt = await RcvMain.create(**rcvMain_new)
+
+                return {
+                    'id': rcvMain_rslt.rcv_id[4:],
+                    'dt': rcv_dt.strftime('%Y-%m-%d %H:%M:%S')
+                }
+            
+            except:
+                raise CustomHTTPException(status_code = 400, detail='数据不合法', err_code=12007)
+
+        except:
+            raise CustomHTTPException(status_code = 400, detail='数据不合法',err_code = 12005)
 
     else:
         raise CustomHTTPException(status_code = 400, detail = '数据异常', err_code = 12004)
+
+# 创建/更新群组 - 基本信息
+async def update_rcvgroup_handler(
+        group_id: str | None = None,
+        group_data: Dict[str,Any] | None = None,
+        user: str | None = None):
+    
+    # 如果传入receiver_id那么就是新增, 反之则为创建
+    if group_id:
+
+        try:
+            group_ins = await RcvGroup.filter(group_id=group_id).first()
+            
+            update_fields = {}
+            for k,v in group_data.items():
+                if v is not None and v != getattr(group_ins,k):
+                    update_fields[k] = v
+
+            if len(update_fields) > 0:
+                
+                update_fields['group_update_usr'] = user
+                update_fields['group_update_dt'] = datetime.now(timezone(timedelta(hours=8)))
+
+                for field, value in update_fields.items():
+                    setattr(group_ins,field,value)
+
+                await group_ins.save()
+                return {
+                    'id': group_ins.group_id[6:],
+                    'dt': update_fields['group_update_dt']
+                }
+
+            else:
+                raise CustomHTTPException(status_code = 400, detail='无更新数据',err_code=12001)
+
+        except:
+            raise CustomHTTPException(status_code = 400, detail='数据不合法', err_code=12002)
+
+    elif group_id is None and len(group_data) != 0:
+
+        try:
+
+            group_dt = datetime.now(timezone(timedelta(hours=8)))
+            group_data.update({
+                'group_id': f'group_{ObjectId()}',
+                'group_create_usr': user,
+                'group_create_dt': group_dt,
+                'group_update_usr': user,
+                'group_update_dt': group_dt
+            })
+
+            group_rslt = await RcvGroup.create(**group_data)
+            return {
+                'id': group_rslt.group_id[6:],
+                'dt': group_dt.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        
+        except:
+            raise CustomHTTPException(status_code=400, detail='数据不合法', err_code=12004)
+
+    else:
+        raise CustomHTTPException(status_code=400,detail='数据异常',err_code=12005)
+
+# 创建/更新群组 - 成员
+# async def update_grouplist_handler(
+#         group_id:str,rcv_dict:Dict[str,Any],user:str | None = None):
+    
+
 
 # 查询频道
 async def get_channel_handler(filters):
