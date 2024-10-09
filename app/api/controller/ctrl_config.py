@@ -7,8 +7,8 @@ from datetime import datetime,timezone,timedelta
 from bson.objectid import ObjectId
 
 from app.models.notify import NfyChnl,NfyTmpl
-from app.models.receiver import RcvMain,RcvBark, RcvNtfy, RcvGroup
-from app.utils.query import build_query_exp, build_or_exp, distinct_query,paginate_query
+from app.models.receiver import *
+from app.utils.query import build_query_exp, build_or_exp, paginate_query
 from app.api.controller.ctrl_error import CustomHTTPException
 
 # 创建/更新频道
@@ -251,7 +251,7 @@ async def update_rcvgroup_handler(
                 await group_ins.save()
                 return {
                     'id': group_ins.group_id[6:],
-                    'dt': update_fields['group_update_dt']
+                    'dt': update_fields['group_update_dt'].strftime('%Y-%m-%d %H:%M:%S')
                 }
 
             else:
@@ -286,10 +286,44 @@ async def update_rcvgroup_handler(
         raise CustomHTTPException(status_code=400,detail='数据异常',err_code=12005)
 
 # 创建/更新群组 - 成员
-# async def update_grouplist_handler(
-#         group_id:str,rcv_dict:Dict[str,Any],user:str | None = None):
-    
+async def update_grouplist_handler(
+        group_id:str,rcv_dict:Dict[str,Any],user:str | None = None):
 
+    try:
+        rcv_list = await GroupDetail.filter(group_id=group_id) \
+                    .values_list('group_rcv',flat=True)
+
+        insert_rcv = rcv_dict.get('insert',None)
+        remove_rcv = rcv_dict.get('remove',None)
+
+        need_insert = list(set(insert_rcv) - set(rcv_list)) if insert_rcv else []
+        need_remove = list(set(rcv_list) & set(remove_rcv)) if remove_rcv else []
+
+        detail_dt = datetime.now(timezone(timedelta(hours=8)))
+
+        if len(need_remove) >= 1:
+            await GroupDetail.filter(group_rcv__in=need_remove).delete()
+
+        if len(need_insert) >= 1:
+            insert_list = [
+                GroupDetail(
+                    group_id=group_id,group_rcv=each,detail_stu=1,
+                    detail_create_usr=user, detail_update_usr=user,
+                    detail_create_dt=detail_dt,detail_update_dt=detail_dt
+                ) for each in need_insert
+            ]
+
+            await GroupDetail.bulk_create(insert_list)
+
+        
+        return {
+            'dt':detail_dt.strftime('%Y-%m-%d %H:%M:%S'),
+            'remove': len(need_remove),
+            'insert': len(need_insert)
+        }
+
+    except:
+        raise CustomHTTPException(status_code=400, detail='数据不合法', err_code=12005)
 
 # 查询频道
 async def get_channel_handler(filters):
@@ -451,15 +485,15 @@ async def get_rcvgroup_handler(filters):
     
     order_index = order_dict.get(filters.get('order_by'),'group_update_dt')
 
-    group_query = RcvGroup.filter(and_query).filter(or_query).order_by(order_index)
-    group_distinct = await distinct_query(group_query,'group_id','group_name')
-
     try:
         if filters.get('page_no'):
-            group_rslt = await paginate_query(group_distinct,filters['page_no'],filters['page_size'])
+            group_rslt = await paginate(
+                RcvGroup.filter(and_query).filter(or_query).order_by(order_index),
+                Params(page=filters['page_no'],size=filters['page_size'])
+            )
 
         else:
-            group_rslt = group_distinct[0] if len(group_distinct) > 0 else []
+            group_rslt = await RcvGroup.filter(and_query).filter(or_query).order_by(order_index)
 
         return group_rslt
     
@@ -469,13 +503,21 @@ async def get_rcvgroup_handler(filters):
 # 查询分组明细
 async def get_rcvgourp_detail_handler(filters):
 
-    try:
-        group_id = filters.get('target_id',None)
-        group_ins = await RcvGroup.filter(group_id=group_id).first()
-        group_rcv = await RcvGroup.filter(group_id=group_id).values_list('group_rcv',flat=True)
-        group_ins.group_rcv = group_rcv
-        
-        return group_ins
+    order_dict = {
+        'id':'group_rcv','-id':'-group_rcv',
+        'dt':'detail_update_dt','-dt':'-group_update_dt'
+    }
 
-    except:
-        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12007)
+    order_index = order_dict.get(filters.get('order_by'),'detail_update_dt')
+
+    if filters.get('group_id',None):
+
+        detail_rslt = await paginate(
+            GroupDetail.filter(group_id=filters['group_id']).order_by(order_index),
+            Params(page=filters['page_no'],size=filters['page_size'])
+        )
+
+        return detail_rslt
+    
+    else:
+        raise CustomHTTPException(status_code=400,detail='查询参数错误',err_code=12009)

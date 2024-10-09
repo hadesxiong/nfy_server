@@ -115,27 +115,94 @@ class ReceiverUpdateForm(ReceiverBark,ReceiverNtfy):
                 return json.dumps(error_info)
         return v
     
-class ReceiverGroupUpdate(BaseModel):
 
-    group_id: str | None = Field(default=None, alias='group')
-    group_name: str | None = Field(default=None, alias='name')
-    group_type: int | None = Field(default=None, alias='type')
-    group_stu: int | None = Field(default=None, alias='statu')
-    group_rcv: str | List[str] | None = Field(default=None, alias='receiver')
+class RcvGroupUpdateForm(BaseModel):
 
-    class config:
+    group_name: str | None = Field(default=None,alias='name')
+    group_type: int | None = Field(default=1,alias='type')
+    group_stu: int | None = Field(default=None ,alias='statu')
+
+    class Config:
         extra = 'forbid'
+
+class RcvGroupUpdate(RcvGroupUpdateForm):
+
+    group_id: str | None = Field(default=None,alias='group')
+    form: RcvGroupUpdateForm | None = Field(default=None, alias='data')
+
+    @field_validator('form')
+    def form_not_empty(cls,v):
+        if not v:
+            try:
+                raise ValueError('rcv_data cannot be empty')
+            except ValueError as e:
+                error_info = {
+                    'type': '类型错误',
+                    'msg': str(e)
+                }
+                return json.dumps(error_info)
+        return v
+
+class GroupDetailUpdateForm(BaseModel):
+
+    insert: List[str] | None = Field(default=None,alias='add')
+    remove: List[str] | None = Field(default=None,alias='delete')
+
+    class Config:
+        extra = 'forbid'
+
+class GroupDetailUpdate(GroupDetailUpdateForm):
+
+    group_id: str | None = Field(default=None, alias='target')
+    group_data: GroupDetailUpdateForm | None = Field(default=None,alias='data')
+
+    @field_validator('group_data')
+    def group_data_not_empty(cls,v):
+        if not v:
+            try:
+                raise ValueError('rcv_data cannot be empty')
+            except ValueError as e:
+                error_info = {
+                    'type': '类型错误',
+                    'msg': str(e)
+                }
+                return json.dumps(error_info)
+        return v
 
 class ReceiverQueryForm(BaseModel):
 
-    target_class: int = Field(default=1,alias='tar_class')
-    target_id: str | None = Field(default=None,alias='target')
-    group_name: str | None = Field(default=None,alias='name')
+    rcv_id: str | None = Field(default=None,alias='target')
     rcv_chnl: str | None = Field(default=None,alias='channel')
-    rcv_type: int | None = Field(default=None,alias='type')
+    rcv_type: int | None = Field(default=1,alias='type')
     start_dt: str | None = Field(default=None,alias='start')
     end_dt: str | None = Field(default=None,alias='end')
     key_word: str | None = Field(default=None,alias='key')
+    page_no: int | None = Field(default=1,alias='page')
+    page_size: int | None = Field(default=10,alias='size')
+    order_by: str | None = Field(default=None,alias='order')   
+
+    class Config:
+        extra = 'forbid' 
+
+class RcvGroupQueryForm(BaseModel):
+
+    group_id: str | None = Field(default=None,alias='target')
+    group_name: str | None = Field(default=None,alias='name')
+    group_type: int | None = Field(default=None,alias='type')
+    group_stu: int | None = Field(default=1,alias='statu')
+    start_dt: str | None = Field(default=None,alias='start')
+    end_dt: str | None = Field(default=None,alias='end')
+    key_word: str | None = Field(default=None,alias='key')
+    page_no: int | None = Field(default=1,alias='page')
+    page_size: int | None = Field(default=10,alias='size')
+    order_by: str | None = Field(default=None,alias='order')  
+
+    class Config:
+        extra = 'forbid'
+
+class RcvGroupDetailQueryForm(BaseModel):
+
+    group_id: str | None = Field(default=None,alias='group')
     page_no: int | None = Field(default=1,alias='page')
     page_size: int | None = Field(default=10,alias='size')
     order_by: str | None = Field(default=None,alias='order')
@@ -146,7 +213,7 @@ class ReceiverQueryForm(BaseModel):
 # Response模型
 class UpdateRst(ResBasic):
 
-    target: str | None = Field(default=None)
+    target: str | Dict[str,Any] | None = Field(default=None)
     dt: str | None = Field(default=None)
 
 class ChannelInfoRst(BaseModel):

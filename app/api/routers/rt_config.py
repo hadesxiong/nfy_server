@@ -77,17 +77,44 @@ async def updateReceiverInfo(
         target = rslt['id'], dt = rslt['dt'])
 
 # 更新接受群组
-@config_rt.post('/rcvGroupUpdate')
+@config_rt.post('/rcvGroupUpdate',
+                response_model=UpdateRst,
+                response_model_exclude_unset=True)
 
 async def updateRcvGroupInfo(
-    form_data:ReceiverGroupUpdate,
+    form_data:RcvGroupUpdate,
     current_user: str = Depends(get_current_user)):
 
     # 清理参数
-    fltr_data = {k:v for k,v in form_data.model_dump().items() if v is not None}
+    fltr_data = {k:v for k,v in form_data.model_dump()['form'].items() if v is not None}
+    rslt = await update_rcvgroup_handler(
+        group_id=form_data.model_dump().get('group_id',None),
+        group_data=fltr_data,
+        user=current_user)
 
+    return UpdateRst(code=200,msg='success',
+                     target=rslt['id'],dt=rslt['dt'])
 
-    return UpdateRst(code=200,msg='success')
+# 更新接受群组人员明细
+@config_rt.post('/rcvGroupDetailUpdate',
+                response_model=UpdateRst,
+                response_model_exclude_unset=True)
+
+async def updateRcvGroupDetail(
+    form_data: GroupDetailUpdate,
+    current_user: str = Depends(get_current_user)):
+
+    # 清理参数
+    fltr_data = {k:v for k,v in form_data.model_dump()['group_data'].items() if v is not None}
+
+    rslt = await update_grouplist_handler(
+        group_id= form_data.model_dump().get('group_id',None),
+        rcv_dict = fltr_data,
+        user=current_user,
+    )
+
+    return UpdateRst(code=200,msg='success',dt=rslt['dt'],
+            target={'delete':rslt['remove'],'add':rslt['insert']})
 
 # 查询频道信息
 @config_rt.get('/channelQuery',
@@ -163,63 +190,52 @@ async def getReceiverInfo(
     # 清理查询参数
     fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
     
-    if fltr_pars.get('target_id'):
-        fltr_pars.pop('page_no',None)
-        fltr_pars.pop('page_size',None)
-
-    if int(fltr_pars['target_class']) == 1:
-        fltr_pars['rcv_id'] = fltr_pars.get('target_id',None)
-        if not fltr_pars.get('rcv_id'):
-            fltr_pars.pop('rcv_id',None)
-        fltr_pars.pop('target_id',None)
-        fltr_pars.pop('group_name',None)
-        fltr_pars.pop('target_class',None)
-
-        rslt = await get_receiver_handler(fltr_pars)
-
-        if not fltr_pars.get('rcv_id'):
-            return ReceiverListRes(
-                code=200,msg='success',
-                data=rslt.items,has_next=rslt.page<rslt.pages
-            )
-        else:
-            return ReceiverListRes(
-                code=200,msg='success',
-                data=rslt[0] if len(rslt)>=1 else None
-            )
-
+    rslt = await get_receiver_handler(fltr_pars)
     
-    elif int(fltr_pars['target_class']) == 2:
-        fltr_pars['group_id'] = fltr_pars.get('target_id',None)
-        if not fltr_pars.get('group_id'):
-            fltr_pars.pop('group_id',None)
-        fltr_pars.pop('target_id',None)
-        fltr_pars.pop('rcv_chnl',None)
-        fltr_pars.pop('rcv_type',None)
-        fltr_pars.pop('target_class',None)
+    if not fltr_pars.get('rcv_id'):
+        return ReceiverListRes(
+            code=200,msg='success',data=rslt.items,
+            has_next=rslt.page<rslt.pages
+        )
 
-        rslt = await get_rcvgroup_handler(fltr_pars)
+    else:
+        return ReceiverListRes(
+            code=200,msg='success',
+            data=rslt[0] if len(rslt) >=1 else None
+        )
 
-        print(rslt)
-
-        if not fltr_pars.get('group_id'):
-            return ReceiverListRes(
-                code=200,msg='success',
-                data=rslt['items'],has_next=rslt['page']<rslt['pages']
-            )
-        else:
-            return ReceiverListRes(
-                code=200,msg='success',
-                data=rslt[0] if len(rslt)>=1 else None
-            )
-
-# 查询分组明细
+# 查询分组基本信息
 @config_rt.get('/rcvGroupQuery',
                response_model=ReceiverListRes,
                response_model_exclude_unset=True)
 
 async def getRcvGroupInfo(
-    params: ReceiverQueryForm = Depends(),
+    params: RcvGroupQueryForm = Depends(),
+    current_use: str = Depends(get_current_user)):
+
+    # 清理查询参数
+    fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
+
+    rslt = await get_rcvgroup_handler(fltr_pars)
+    print(rslt)
+    if not fltr_pars.get('group_id'):
+        return ReceiverListRes(
+            code=200,msg='success',data=rslt.items,
+            has_next=rslt.page<rslt.pages
+        )
+    else:
+        return ReceiverListRes(
+            code=200,msg='success',
+            data=rslt[0] if len(rslt) >=1 else None
+        )
+
+# 查询分组明细
+@config_rt.get('/rcvGroupDetailQuery',
+               response_model=ReceiverListRes,
+               response_model_exclude_unset=True)
+
+async def getRcvGroupDetail(
+    params: RcvGroupDetailQueryForm = Depends(),
     current_user: str = Depends(get_current_user)):
 
     # 清理查询参数,
