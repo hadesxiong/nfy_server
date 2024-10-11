@@ -173,7 +173,7 @@ class ReceiverQueryForm(BaseModel):
 
     rcv_id: str | None = Field(default=None,alias='target')
     rcv_chnl: str | None = Field(default=None,alias='channel')
-    rcv_type: int | None = Field(default=1,alias='type')
+    rcv_type: int | None = Field(default=None,alias='type')
     start_dt: str | None = Field(default=None,alias='start')
     end_dt: str | None = Field(default=None,alias='end')
     key_word: str | None = Field(default=None,alias='key')
@@ -268,6 +268,7 @@ class ReceiverInfoRst(BaseModel):
     rcv_type: int | None = Field(default=None)
     rcv_update_usr: str | None = Field(default=None)
     rcv_update_dt: datetime | None = Field(default=None)
+    rcv_ext_data: Dict[str,Any] | str | None = Field(default=None)
 
     class Config:
 

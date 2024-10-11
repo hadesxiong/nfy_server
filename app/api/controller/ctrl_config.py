@@ -8,8 +8,10 @@ from bson.objectid import ObjectId
 
 from app.models.notify import NfyChnl,NfyTmpl
 from app.models.receiver import *
-from app.utils.query import build_query_exp, build_or_exp, paginate_query
+from app.utils.query import build_query_exp, build_or_exp
 from app.api.controller.ctrl_error import CustomHTTPException
+
+import json
 
 # 创建/更新频道
 async def update_channel_handler(
@@ -445,10 +447,39 @@ async def get_receiver_handler(filters):
 
     try:
         if filters.get('page_no'):
-            rcv_rslt = await paginate(
-                RcvMain.filter(and_query).filter(or_query).order_by(order_index),
-                Params(page=filters['page_no'],size=filters['page_size'])
-            )
+            
+            rcv_main = RcvMain.filter(and_query).filter(or_query).order_by(order_index)
+
+            rcv_rslt = await paginate(rcv_main,Params(page=filters['page_no'],size=filters['page_size']))
+            
+            ids_list = list(map(lambda x: x.rcv_id, rcv_rslt.items))
+
+            bark_rslt = await RcvBark.filter(rcv_id__in=ids_list)
+            ntfy_rslt = await RcvNtfy.filter(rcv_id__in=ids_list)
+
+            for each in rcv_rslt.items:
+
+                if each.rcv_type == 1:
+
+                    target_rcv = next((d for d in bark_rslt if d.rcv_id == each.rcv_id),None)
+
+                    each.rcv_ext_data = {
+                        'device_key':target_rcv.device_key,
+                        'rcv_key':target_rcv.rcv_key,
+                        'rcv_iv':target_rcv.rcv_iv
+                    } if target_rcv else {}
+
+                elif each.rcv_type == 2:
+
+                    target_rcv = next((d for d in ntfy_rslt if d.rcv_id == each.rcv_id),None)
+
+                    each.rcv_ext_data = {
+                        'rcv_name': target_rcv.rcv_name,
+                        'rcv_role': target_rcv.rcv_role,
+                        'rcv_topic': target_rcv.rcv_topic,
+                        'rcv_perm': target_rcv.rcv_perm
+                    }
+
         else:
             rcv_rslt = await RcvMain.filter(and_query).filter(or_query)
 
