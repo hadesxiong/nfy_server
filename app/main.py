@@ -45,6 +45,7 @@ app = get_application()
 app.include_router(user_rt)
 app.include_router(config_rt)
 app.include_router(msg_rt)
+app.include_router(common_rt)
 
 register_tortoise(
     app,

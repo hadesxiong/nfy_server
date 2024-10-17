@@ -33,9 +33,9 @@ class DictMark(Model):
     mark_index = fields.CharField(max_length=128)
     mark_code = fields.IntField()
     mark_value = fields.CharField(max_length=128)
-    marK_stu = fields.IntField()
+    mark_stu = fields.IntField()
     mark_abbr = fields.CharField(max_length=128)
-    mark_ext_data = fields.JSONField()
+    mark_ext_data = fields.JSONField(null=True)
 
     class Meta:
         table = 'nfy_dict_mark'
