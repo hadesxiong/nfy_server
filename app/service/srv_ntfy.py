@@ -1,4 +1,5 @@
 # coding=utf8
+
 import json,requests
 
 def send_ntfy_nfy(**kwargs):

@@ -1,17 +1,14 @@
 # coding=utf8
+
 from fastapi import APIRouter,Depends, Form
 
 from app.api.schema.sch_user import UserInfoRes,UserAuthRes,UserInfoQuery
 from app.api.controller.ctrl_user import *
-
 from app.service.srv_security import decrypt_aes,get_current_user
 from app.core.config import settings
 
 # 定义路由
-user_rt = APIRouter(
-    prefix='/user',
-    tags=['User','Basic Service'],
-)
+user_rt = APIRouter(prefix='/user', tags=['User'])
 
 # 获取用户信息
 @user_rt.get(

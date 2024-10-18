@@ -1,14 +1,13 @@
 # coding=utf8
+
 from fastapi import APIRouter,Depends
-from typing import Union
 
 from app.api.controller.ctrl_common import *
 from app.api.schema.sch_common import *
-
 from app.service.srv_security import get_current_user
 
 # 定义路由
-common_rt = APIRouter(prefix='/common',tags=['Common'])
+common_rt = APIRouter(prefix='/common', tags=['Common'])
 
 # 查询字典信息
 @common_rt.get(

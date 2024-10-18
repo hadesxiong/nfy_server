@@ -1,6 +1,6 @@
 # coding=utf8
-from tortoise import Tortoise
 
+from tortoise import Tortoise
 # 引入配置文件
 from app.core.config import settings
 

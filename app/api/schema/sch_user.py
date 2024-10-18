@@ -1,7 +1,7 @@
 # coding=utf8
-from pydantic import BaseModel, Field
-from datetime import datetime
 
+from datetime import datetime
+from pydantic import BaseModel, Field
 from typing import List
 
 from app.api.schema.basic import ResBasic

@@ -1,21 +1,16 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# coding=utf8
 
 from contextlib import asynccontextmanager
-
-from app.core.config import settings
-
-import app.core.db as db_base
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_pagination import add_pagination
 from tortoise.contrib.fastapi import register_tortoise
 
-from fastapi_pagination import add_pagination
-
+import app.core.db as db_base
+from app.core.config import settings
 from app.api.routers import *
-
 from app.api.controller.ctrl_error import add_exception_handlers
-
 from app.api.controller.ctrl_msg import get_chnl_list
-
 from app.service.srv_msg import start_consumer,push_notify
 
 @asynccontextmanager

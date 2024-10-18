@@ -1,13 +1,13 @@
 # coding=utf8
-from fastapi import APIRouter,Depends,Request
-from typing import Dict,Any
+
+from fastapi import APIRouter,Depends
 
 from app.api.schema.sch_msg import *
 from app.api.controller.ctrl_msg import *
 from app.service.srv_security import get_current_user
 
 # 定义路由
-msg_rt = APIRouter(prefix='/message',tags=['Notify','Push'])
+msg_rt = APIRouter(prefix='/message', tags=['Message'])
 
 # 推送消息到rabbit服务
 @msg_rt.post('/sendMessage',

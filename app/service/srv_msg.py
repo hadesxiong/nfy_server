@@ -1,6 +1,8 @@
 # coding=utf8
+
 import asyncio,json,base64
-from typing import List, Callable, Any
+
+from typing import List, Callable
 from aio_pika import Message
 from bson import ObjectId
 # 引入方法

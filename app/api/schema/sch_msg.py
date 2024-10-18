@@ -1,5 +1,7 @@
 # coding=utf8
+
 import json
+
 from pydantic import BaseModel, Field, field_validator
 from typing import List,Dict,Any
 
@@ -7,7 +9,6 @@ from app.api.schema.basic import ResBasic
 
 # 定义基本模型
 # Request模型
-
 class MsgData(BaseModel):
 
     msg_type: int = Field(default=1,alias='type')

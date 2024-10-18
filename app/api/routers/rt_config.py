@@ -1,16 +1,13 @@
 # coding=utf8
-from fastapi import APIRouter,Depends,Request
-from typing import Union
-# from app.api.schema.sch_config import ChannelUpdateQuery, TemplateUpdateQuery, UpdateRst
-# from app.api.schema.sch_config import ChannelQueryForm, ChannelInfoRes
-# from app.api.schema.sch_config import TemplateQueryForm, TemplateInfoRes
+
+from fastapi import APIRouter,Depends
+
 from app.api.controller.ctrl_config import *
 from app.api.schema.sch_config import *
-
 from app.service.srv_security import get_current_user
 
 # 定义路由
-config_rt = APIRouter(prefix='/config', tags=['Notify','Config'])
+config_rt = APIRouter(prefix='/config', tags=['Config'])
 
 # 更新频道信息
 @config_rt.post(

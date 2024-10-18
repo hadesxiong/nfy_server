@@ -1,20 +1,16 @@
 # coding=utf8
+
 import base64,jwt
 from datetime import datetime,timedelta,timezone
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
-
-from passlib.context import CryptContext
-
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends,HTTPException, status
-
 from jwt.exceptions import InvalidTokenError,ExpiredSignatureError
-
+from passlib.context import CryptContext
 from typing import Annotated
-
 from tortoise.models import Model
 from tortoise.expressions import Q
 

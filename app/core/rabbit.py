@@ -1,5 +1,6 @@
 # coding=utf8
-import asyncio, aio_pika
+
+import aio_pika
 from app.core.config import settings
 
 # 创建链接
