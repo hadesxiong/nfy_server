@@ -88,3 +88,19 @@ async def paginate_query(items,page,size):
     
     return {'items': items_page,'total': total,
             'page': page,'size': size,'pages': pages}
+
+def get_dict_code(dict_data: List[Any], 
+                  mark_index: str, mark_code: int) -> str:
+    
+    filter_list = list(
+        filter(
+            lambda x: x['mark_index'] == mark_index \
+            and x['mark_code'] == mark_code, 
+            dict_data
+        )
+    )
+    
+    try:
+        return filter_list[0].get('mark_value',None)
+    except:
+        return None

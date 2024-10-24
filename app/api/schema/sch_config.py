@@ -222,8 +222,8 @@ class ChannelInfoRst(BaseModel):
 
     chnl_id: str | None = Field(default=None)
     chnl_name: str | None = Field(default=None)
-    chnl_type: int | None = Field(default=None)
-    chnl_auth_method: int | None =Field(default=None)
+    chnl_type: int | str | None = Field(default=None)
+    chnl_auth_method: int | str | None =Field(default=None)
     chnl_host: str | None = Field(default=None)
     chnl_update_dt: datetime | None = Field(default=None)
     chnl_update_usr: str | None = Field(default=None)

@@ -9,7 +9,8 @@ from tortoise.expressions import Q
 
 from app.models.notify import NfyChnl,NfyTmpl
 from app.models.receiver import *
-from app.utils.query import build_query_exp, build_or_exp
+from app.models.common import UserMain, DictMark
+from app.utils.query import build_query_exp, build_or_exp, get_dict_code
 from app.api.controller.ctrl_error import CustomHTTPException
 
 import json
@@ -361,14 +362,34 @@ async def get_channel_handler(filters):
     }
     order_index = order_dict.get(filters.get('order_by'),'-chnl_update_dt')
 
+    chnl_query = NfyChnl.filter(and_query).filter(or_query).order_by(order_index)
+
     try:
         if filters.get('page_no'):
             chnl_rslt = await paginate(
-                NfyChnl.filter(and_query).filter(or_query).order_by(order_index),
+                chnl_query,
                 Params(page=filters['page_no'],size=filters['page_size'])
             )
+
         else:
-            chnl_rslt = await NfyChnl.filter(and_query).filter(or_query)
+            chnl_rslt = await chnl_query
+
+        # 匹配用户
+        usr_list = await chnl_query.values_list('chnl_update_usr', flat=True)
+
+        usr_rslt = await UserMain.filter(usr_id__in=usr_list).values('usr_id','usr_name')
+        usr_dict = {x['usr_id']:x['usr_name'] for x in usr_rslt}
+
+        # 匹配码值
+        dict_rslt = await DictMark.filter(mark_abbr='nfy_chnl_main') \
+                    .filter(mark_index__in=['chnl_type','chnl_auth_method']) \
+                    .values('mark_index','mark_code','mark_value')
+
+        # 重新包装
+        for each in getattr(chnl_rslt,'items',chnl_rslt):
+            each.chnl_update_usr = usr_dict[each.chnl_update_usr]
+            each.chnl_type = get_dict_code(dict_rslt,'chnl_type',each.chnl_type)
+            each.chnl_auth_method = get_dict_code(dict_rslt,'chnl_auth_method', each.chnl_auth_method)
 
         return chnl_rslt
     
@@ -404,14 +425,33 @@ async def get_template_handler(filters):
 
     order_index = order_dict.get(filters.get('order_by'),'-tmpl_update_dt')
 
+    tmpl_query = NfyTmpl.filter(and_query).filter(or_query).order_by(order_index)
+
     try:
         if filters.get('page_no'):
             tmpl_rslt = await paginate(
-                NfyTmpl.filter(and_query).filter(or_query).order_by(order_index),
+                tmpl_query,
                 Params(page=filters['page_no'],size=filters['page_size'])
             )
         else:
-            tmpl_rslt = await NfyTmpl.filter(and_query).filter(or_query)
+            tmpl_rslt = await tmpl_query
+
+        # 匹配用户
+        usr_list = await tmpl_query.values_list('tmpl_update_usr',flat=True)
+
+        usr_rslt = await UserMain.filter(usr_id__in=usr_list).values('usr_id','usr_name')
+        usr_dict = {x['usr_id']:x['usr_name'] for x in usr_rslt}
+
+        # 匹配频道
+        chnl_list = await tmpl_query.values_list('tmpl_chnl', flat=True)
+
+        chnl_rslt = await NfyChnl.filter(chnl_id__in=chnl_list).values('chnl_id','chnl_name')
+        chnl_dict = {x['chnl_id']:x['chnl_name'] for x in chnl_rslt}
+
+        # 重新包装
+        for each in getattr(tmpl_rslt,'items',tmpl_rslt):
+            each.tmpl_update_usr = usr_dict[each.tmpl_update_usr]
+            each.tmpl_chnl = chnl_dict[each.tmpl_chnl]
 
         return tmpl_rslt
     
