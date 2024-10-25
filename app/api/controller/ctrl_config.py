@@ -486,43 +486,66 @@ async def get_receiver_handler(filters):
 
     order_index = order_dict.get(filters.get('order_by'),'-rcv_update_dt')
 
+    rcv_query = RcvMain.filter(and_query).filter(or_query).order_by(order_index)
+
     try:
         if filters.get('page_no'):
             
-            rcv_main = RcvMain.filter(and_query).filter(or_query).order_by(order_index)
-
-            rcv_rslt = await paginate(rcv_main,Params(page=filters['page_no'],size=filters['page_size']))
-            
-            ids_list = list(map(lambda x: x.rcv_id, rcv_rslt.items))
-
-            bark_rslt = await RcvBark.filter(rcv_id__in=ids_list)
-            ntfy_rslt = await RcvNtfy.filter(rcv_id__in=ids_list)
-
-            for each in rcv_rslt.items:
-
-                if each.rcv_type == 1:
-
-                    target_rcv = next((d for d in bark_rslt if d.rcv_id == each.rcv_id),None)
-
-                    each.rcv_ext_data = {
-                        'device_key':target_rcv.device_key,
-                        'rcv_key':target_rcv.rcv_key,
-                        'rcv_iv':target_rcv.rcv_iv
-                    } if target_rcv else {}
-
-                elif each.rcv_type == 2:
-
-                    target_rcv = next((d for d in ntfy_rslt if d.rcv_id == each.rcv_id),None)
-
-                    each.rcv_ext_data = {
-                        'rcv_name': target_rcv.rcv_name,
-                        'rcv_role': target_rcv.rcv_role,
-                        'rcv_topic': target_rcv.rcv_topic,
-                        'rcv_perm': target_rcv.rcv_perm
-                    }
+            rcv_rslt = await paginate(rcv_query,Params(page=filters['page_no'],size=filters['page_size']))
 
         else:
-            rcv_rslt = await RcvMain.filter(and_query).filter(or_query)
+            rcv_rslt = await rcv_query
+
+        # 匹配用户
+        ids_list = list(map(lambda x: x.rcv_id, getattr(rcv_rslt,'items',rcv_rslt)))
+
+        bark_rslt = await RcvBark.filter(rcv_id__in=ids_list)
+        ntfy_rslt = await RcvNtfy.filter(rcv_id__in=ids_list)
+
+        # 匹配更信人
+        usr_list = await rcv_query.values_list('rcv_update_usr', flat=True)
+
+        usr_rslt = await UserMain.filter(usr_id__in=usr_list).values('usr_id','usr_name')
+        usr_dict = {x['usr_id']:x['usr_name'] for x in usr_rslt}
+
+        # 匹配频道
+        chnl_list = await rcv_query.values_list('rcv_chnl',flat=True)
+
+        chnl_rslt = await NfyChnl.filter(chnl_id__in=chnl_list).values('chnl_id','chnl_name')
+        chnl_dict = {x['chnl_id']:x['chnl_name'] for x in chnl_rslt}
+
+        # 匹配码值
+        dict_rslt = await DictMark.filter(mark_abbr__in=['nfy_rcv_main','nfy_rcv_ntfy']) \
+                    .filter(mark_index__in=['rcv_type','rcv_role','rcv_perm']) \
+                    .values('mark_index','mark_code','mark_value')
+        
+        # 重新包装
+        for each in getattr(rcv_rslt,'items',rcv_rslt):
+
+            if each.rcv_type == 1:
+
+                target_rcv = next((d for d in bark_rslt if d.rcv_id == each.rcv_id),None)
+                
+                each.rcv_ext_data = {
+                    'device_key':target_rcv.device_key,
+                    'rcv_key':target_rcv.rcv_key,
+                    'rcv_iv':target_rcv.rcv_iv
+                } if target_rcv else {}
+
+            elif each.rcv_type == 2:
+
+                target_rcv = next((d for d in ntfy_rslt if d.rcv_id == each.rcv_id),None)
+                
+                each.rcv_ext_data = {
+                    'rcv_name': target_rcv.rcv_name,
+                    'rcv_role': get_dict_code(dict_rslt,'rcv_role',target_rcv.rcv_role),
+                    'rcv_topic': target_rcv.rcv_topic,
+                    'rcv_perm': get_dict_code(dict_rslt,'rcv_perm',target_rcv.rcv_perm)
+                }
+
+            each.rcv_type = get_dict_code(dict_rslt,'rcv_type',each.rcv_type)
+            each.rcv_chnl = chnl_dict[each.rcv_chnl]
+            each.rcv_update_usr = usr_dict[each.rcv_update_usr]
 
         return rcv_rslt
 
@@ -556,17 +579,33 @@ async def get_rcvgroup_handler(filters):
     }
     
     order_index = order_dict.get(filters.get('order_by'),'group_update_dt')
+    
+    group_query = RcvGroup.filter(and_query).filter(or_query).order_by(order_index)
 
     try:
         if filters.get('page_no'):
-            group_rslt = await paginate(
-                RcvGroup.filter(and_query).filter(or_query).order_by(order_index),
-                Params(page=filters['page_no'],size=filters['page_size'])
-            )
+            group_rslt = await paginate(group_query,Params(page=filters['page_no'],size=filters['page_size']))
 
         else:
-            group_rslt = await RcvGroup.filter(and_query).filter(or_query).order_by(order_index)
+            group_rslt = await group_query
 
+        # 匹配用户
+        usr_list = await group_query.values_list('group_update_usr',flat=True)
+        usr_rslt = await UserMain.filter(usr_id__in=usr_list).values('usr_id','usr_name')
+
+        usr_dict = {x['usr_id']:x['usr_name'] for x in usr_rslt}
+
+        # 匹配码值
+        dict_rslt = await DictMark.filter(mark_abbr='nfy_rcv_group') \
+                    .filter(mark_index__in=['group_type']) \
+                    .values('mark_index','mark_code','mark_value')
+        
+        # 重新包装
+        for each in getattr(group_rslt,'items',group_rslt):
+
+            each.group_update_usr = usr_dict[each.group_update_usr]
+            each.group_type = get_dict_code(dict_rslt,'group_type',each.group_type)
+        
         return group_rslt
     
     except:
@@ -582,12 +621,11 @@ async def get_rcvgourp_detail_handler(filters):
 
     order_index = order_dict.get(filters.get('order_by'),'detail_update_dt')
 
+    detail_query = GroupDetail.filter(group_id=filters['group_id']).order_by(order_index)
+
     if filters.get('group_id',None):
 
-        detail_rslt = await paginate(
-            GroupDetail.filter(group_id=filters['group_id']).order_by(order_index),
-            Params(page=filters['page_no'],size=filters['page_size'])
-        )
+        detail_rslt = await paginate(detail_query,Params(page=filters['page_no'],size=filters['page_size']))
 
         return detail_rslt
     

@@ -7,7 +7,7 @@ from app.api.schema.sch_common import *
 from app.service.srv_security import get_current_user
 
 # 定义路由
-common_rt = APIRouter(prefix='/common', tags=['Common'])
+common_rt = APIRouter(prefix='/common', tags=['common'])
 
 # 查询字典信息
 @common_rt.get(

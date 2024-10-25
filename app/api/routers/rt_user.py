@@ -8,7 +8,7 @@ from app.service.srv_security import decrypt_aes,get_current_user
 from app.core.config import settings
 
 # 定义路由
-user_rt = APIRouter(prefix='/user', tags=['User'])
+user_rt = APIRouter(prefix='/user', tags=['user'])
 
 # 获取用户信息
 @user_rt.get(

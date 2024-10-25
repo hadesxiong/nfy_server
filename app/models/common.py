@@ -40,3 +40,4 @@ class DictMark(Model):
 
     class Meta:
         table = 'nfy_dict_mark'
+        unique_together = ('mark_index','mark_value','mark_abbr')

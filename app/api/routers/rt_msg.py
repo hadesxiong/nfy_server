@@ -7,7 +7,7 @@ from app.api.controller.ctrl_msg import *
 from app.service.srv_security import get_current_user
 
 # 定义路由
-msg_rt = APIRouter(prefix='/message', tags=['Message'])
+msg_rt = APIRouter(prefix='/message', tags=['message'])
 
 # 推送消息到rabbit服务
 @msg_rt.post('/sendMessage',

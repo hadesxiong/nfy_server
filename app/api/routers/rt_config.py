@@ -7,7 +7,7 @@ from app.api.schema.sch_config import *
 from app.service.srv_security import get_current_user
 
 # 定义路由
-config_rt = APIRouter(prefix='/config', tags=['Config'])
+config_rt = APIRouter(prefix='/config', tags=['config'])
 
 # 更新频道信息
 @config_rt.post(
@@ -236,11 +236,13 @@ async def getRcvGroupDetail(
     current_user: str = Depends(get_current_user)):
 
     # 清理查询参数,
-    fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None and k == 'target_id'}
+    fltr_pars = {k:v for k,v in params.model_dump().items() if v is not None}
 
-    if fltr_pars.get('target_id',None):
+    if fltr_pars.get('group_id',None):
 
-        result = await get_rcvgourp_detail_handler(fltr_pars)
-        return ReceiverListRes(code=200,msg='success',data=result)
+        rslt = await get_rcvgourp_detail_handler(fltr_pars)
+        return ReceiverListRes(code=200,msg='success',
+                               data=[each.group_rcv for each in rslt.items],
+                               has_next=rslt.page<rslt.pages)
     else:
         return ReceiverListRes(code=300,msg='failed')
